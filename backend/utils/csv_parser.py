@@ -91,28 +91,58 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
             if not found:
                 raise ValueError(f"Colonne manquante dans interventions.csv: '{req_col}'. Colonnes disponibles: {available_columns}")
         
-        # Ajouter la colonne Intervenant si elle existe
+        # Rechercher la colonne Intervenant
         intervenant_col = None
         for col in available_columns:
             if 'intervenant' in col.lower():
                 intervenant_col = col
                 break
         
+        # Rechercher la colonne Code Postal
+        code_postal_col = None
+        for col in available_columns:
+            col_lower = col.lower().replace(' ', '').replace('_', '').replace('-', '')
+            if any(term in col_lower for term in ['codepostal', 'cp', 'postal', 'zip']):
+                code_postal_col = col
+                break
+        
         logger.info(f"Colonnes mappées: {column_mapping}")
         if intervenant_col:
             logger.info(f"Colonne intervenant trouvée: {intervenant_col}")
+        if code_postal_col:
+            logger.info(f"Colonne code postal trouvée: {code_postal_col}")
         
         interventions = []
         for index, row in df.iterrows():
             try:
+                # Construire l'adresse complète
+                adresse_base = str(row[column_mapping['Adresse']]).strip()
+                
+                # Ajouter le code postal s'il existe
+                if code_postal_col and pd.notna(row.get(code_postal_col)):
+                    code_postal = str(row[code_postal_col]).strip()
+                    if code_postal and code_postal.lower() != 'nan':
+                        # Vérifier si le code postal n'est pas déjà dans l'adresse
+                        if code_postal not in adresse_base:
+                            adresse_complete = f"{adresse_base}, {code_postal}"
+                        else:
+                            adresse_complete = adresse_base
+                    else:
+                        adresse_complete = adresse_base
+                else:
+                    adresse_complete = adresse_base
+                
                 intervention = Intervention(
                     client=str(row[column_mapping['Client']]).strip(),
                     date=str(row[column_mapping['Date']]).strip(),
                     duree=str(row[column_mapping['Durée']]).strip(),
-                    adresse=str(row[column_mapping['Adresse']]).strip(),
+                    adresse=adresse_complete,
                     intervenant=str(row.get(intervenant_col, '')).strip() if intervenant_col else ''
                 )
                 interventions.append(intervention)
+                
+                logger.debug(f"Intervention créée: {intervention.client} à {adresse_complete}")
+                
             except Exception as e:
                 logger.warning(f"Erreur ligne {index + 2}: {str(e)}")
                 continue
