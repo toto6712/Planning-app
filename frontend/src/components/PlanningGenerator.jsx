@@ -53,7 +53,7 @@ const PlanningGenerator = ({ interventionsFile, intervenantsFile, onPlanningGene
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 2 minutes timeout pour l'IA
+        timeout: 180000, // 3 minutes timeout pour l'IA avec calcul trajets
       });
 
       // Étape 4: Finalisation
