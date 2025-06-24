@@ -210,6 +210,63 @@ TRAITER TOUTES LES {len(interventions_data)} INTERVENTIONS."""
             logger.error(f"Erreur génération planning: {str(e)}")
             raise ValueError(f"Erreur interne: {str(e)}")
     
+    def generate_fallback_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> list:
+        """Génère un planning de base en cas d'échec de l'IA"""
+        try:
+            logger.info("Génération d'un planning de fallback")
+            fallback_planning = []
+            
+            # Couleurs de base
+            colors = ["#32a852", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444"]
+            
+            for i, intervention in enumerate(interventions):
+                try:
+                    # Assigner un intervenant de base
+                    intervenant_assigned = intervention.intervenant if intervention.intervenant else (
+                        intervenants[i % len(intervenants)].nom if intervenants else "Non assigné"
+                    )
+                    
+                    # Calculer l'heure de fin (ajouter la durée à l'heure de début)
+                    start_time = intervention.date  # Format: "29/06/2025 08:00"
+                    duration = intervention.duree   # Format: "01:00"
+                    
+                    # Convertir au format ISO
+                    date_part, time_part = start_time.split(" ")
+                    day, month, year = date_part.split("/")
+                    start_iso = f"{year}-{month}-{day}T{time_part}"
+                    
+                    # Calculer l'heure de fin
+                    from datetime import datetime, timedelta
+                    start_dt = datetime.fromisoformat(start_iso)
+                    duration_parts = duration.split(":")
+                    duration_td = timedelta(hours=int(duration_parts[0]), minutes=int(duration_parts[1]))
+                    end_dt = start_dt + duration_td
+                    end_iso = end_dt.isoformat()
+                    
+                    fallback_event = {
+                        "client": intervention.client,
+                        "intervenant": intervenant_assigned,
+                        "start": start_iso,
+                        "end": end_iso,
+                        "color": colors[i % len(colors)],
+                        "non_planifiable": False,
+                        "trajet_precedent": "0 min",
+                        "adresse": intervention.adresse
+                    }
+                    
+                    fallback_planning.append(fallback_event)
+                    
+                except Exception as e:
+                    logger.error(f"Erreur création fallback pour intervention {i}: {str(e)}")
+                    continue
+            
+            logger.info(f"Planning de fallback généré avec {len(fallback_planning)} interventions")
+            return fallback_planning
+            
+        except Exception as e:
+            logger.error(f"Erreur génération fallback: {str(e)}")
+            return []
+    
     def calculate_stats(self, planning_events: List[PlanningEvent], total_interventions: int, total_intervenants: int) -> Dict[str, Any]:
         """Calcule las statistiques du planning"""
         try:
