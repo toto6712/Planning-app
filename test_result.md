@@ -249,11 +249,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Health Check Endpoint"
-    - "Upload CSV Endpoint"
-    - "Export CSV Endpoint"
-    - "Export PDF Endpoint"
-    - "OpenAI Integration"
+    - "Chargement Initial"
+    - "Interface Upload CSV"
+    - "Affichage Calendrier"
+    - "Boutons Export"
+    - "Responsive Design"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
