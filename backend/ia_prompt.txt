@@ -23,7 +23,8 @@ COULEURS PAR INTERVENANT (assigner automatiquement) :
 Utilise ces couleurs distinctes dans l'ordre pour chaque intervenant :
 #32a852, #3b82f6, #f59e0b, #8b5cf6, #ef4444, #06b6d4, #84cc16, #f97316, #ec4899, #6366f1, #10b981, #f59e0b
 
-RÉPONSE JSON UNIQUEMENT :
+Tu DOIS répondre UNIQUEMENT avec un tableau JSON valide, rien d'autre :
+
 [
   {
     "client": "Nom Client",
@@ -37,7 +38,4 @@ RÉPONSE JSON UNIQUEMENT :
   }
 ]
 
-IMPORTANT : 
-- Traiter CHAQUE intervention fournie
-- Une couleur unique par intervenant
-- Réponse JSON uniquement, sans texte
+RÉPONSE OBLIGATOIRE : JSON ARRAY uniquement, pas de texte, pas de markdown, pas d'explication.
