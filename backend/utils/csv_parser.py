@@ -270,7 +270,7 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         df = df.dropna(how='all')
         
         # Vérifier les colonnes obligatoires (flexible)
-        required_columns = ['Nom_Prenom', 'Adresse', 'Heure_Mensuel', 'Heure_Hebdomaire']
+        required_columns = ['Nom_Prenom', 'Adresse', 'Heure_Mensuel', 'Heure_hebdomadaire']
         available_columns = df.columns.tolist()
         
         logger.info(f"Colonnes requises: {required_columns}")
