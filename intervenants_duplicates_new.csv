@@ -1,0 +1,5 @@
+Nom,Adresse,Jours_travail,Horaires,Week-end
+Dupont,12 avenue des Vosges Strasbourg,"Lundi, Mardi, Mercredi, Jeudi, Vendredi",07h00-14h00,A
+dupont,15 rue des Fleurs Strasbourg,"Lundi, Mardi, Mercredi, Jeudi, Vendredi",08h00-16h00,A
+Martin,8 rue du Commerce Strasbourg,"Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi",14h00-22h00,B
+MARTIN,10 boulevard de la Paix Strasbourg,"Lundi, Mardi, Mercredi, Jeudi, Vendredi",09h00-18h00,B
