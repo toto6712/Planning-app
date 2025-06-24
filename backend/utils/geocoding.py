@@ -38,28 +38,41 @@ class GeocodingService:
             return None
     
     async def calculate_travel_time(self, address1: str, address2: str) -> int:
-        """Calcule le temps de trajet en minutes entre deux adresses"""
+        """Calcule le temps de trajet RÉEL en minutes entre deux adresses - AUCUNE valeur par défaut"""
         try:
+            logger.debug(f"🗺️ Géocodage: {address1[:40]}...")
             coords1 = await self.geocode_address(address1)
+            
+            logger.debug(f"🗺️ Géocodage: {address2[:40]}...")
             coords2 = await self.geocode_address(address2)
             
-            if not coords1 or not coords2:
-                logger.warning(f"Impossible de calculer le trajet entre '{address1}' et '{address2}'")
-                return 15  # Valeur par défaut
+            if not coords1:
+                raise Exception(f"Impossible de géocoder l'adresse de départ: {address1}")
             
-            # Calculer la distance en km
+            if not coords2:
+                raise Exception(f"Impossible de géocoder l'adresse d'arrivée: {address2}")
+            
+            # Calculer la distance réelle en km
             distance = geodesic(coords1, coords2).kilometers
+            logger.debug(f"📏 Distance géodésique: {distance:.3f} km")
             
-            # Appliquer la règle : 0.75 min/km, arrondi à 5 min
-            travel_time_minutes = distance * 0.75
-            rounded_time = max(5, round(travel_time_minutes / 5) * 5)  # Arrondi à 5 min près, min 5 min
+            # Facteur réaliste pour conduite en ville avec embouteillages
+            # 0.75 min/km est TROP optimiste pour la ville
+            # Facteur plus réaliste : 1.5-2 min/km en ville
+            base_time_minutes = distance * 1.8  # 1.8 min/km (facteur urbain réaliste)
             
-            logger.info(f"Trajet {address1} -> {address2}: {distance:.2f}km = {rounded_time}min")
+            # Arrondir au multiple de 5 supérieur, minimum 5 minutes
+            rounded_time = max(5, int((base_time_minutes + 4) / 5) * 5)
+            
+            logger.info(f"✅ TRAJET CALCULÉ: {address1[:30]}... -> {address2[:30]}... = {distance:.2f}km = {rounded_time}min")
             return int(rounded_time)
             
         except Exception as e:
-            logger.error(f"Erreur calcul trajet '{address1}' -> '{address2}': {str(e)}")
-            return 15  # Valeur par défaut en cas d'erreur
+            error_msg = f"❌ ÉCHEC calcul trajet '{address1[:30]}...' -> '{address2[:30]}...': {str(e)}"
+            logger.error(error_msg)
+            
+            # NE PAS utiliser de valeur par défaut - relancer l'erreur
+            raise Exception(f"Calcul de trajet impossible: {str(e)}")
     
     async def geocode_multiple_addresses(self, addresses: list) -> dict:
         """Géocode plusieurs adresses en lot avec cache"""
