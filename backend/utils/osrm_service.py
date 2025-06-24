@@ -11,7 +11,7 @@ class OSRMService:
     def __init__(self):
         # Serveur OSRM public gratuit
         self.base_url = "http://router.project-osrm.org/route/v1/driving"
-        self.timeout = 10  # secondes
+        self.timeout = 5  # secondes (plus rapide)
         
     async def calculate_travel_time(self, lat1: float, lon1: float, lat2: float, lon2: float) -> int:
         """Calcule le temps de trajet en minutes entre deux points via OSRM"""
