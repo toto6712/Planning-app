@@ -76,6 +76,9 @@ class OpenAIClient:
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
         """Génère un planning optimisé via OpenAI avec validation des conflits"""
         try:
+            # Calculer les temps de trajet via OpenStreetMap
+            travel_times = await self.calculate_travel_times(interventions, intervenants)
+            
             # Générer la palette de couleurs pour les intervenants
             color_palette = [
                 "#32a852", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", 
