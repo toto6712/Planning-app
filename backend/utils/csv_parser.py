@@ -305,12 +305,35 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                     if intervenant.lower() == 'nan':
                         intervenant = ""
                 
+                # Détecter le secteur depuis l'adresse
+                secteur = extract_city_from_address(adresse_complete)
+                
+                # Détecter si c'est une intervention binôme (colonne optionnelle)
+                binome = False
+                if 'Binome' in df.columns or 'Binôme' in df.columns:
+                    binome_col = 'Binome' if 'Binome' in df.columns else 'Binôme'
+                    if pd.notna(row.get(binome_col)):
+                        binome_val = str(row[binome_col]).strip().lower()
+                        binome = binome_val in ['true', '1', 'oui', 'yes']
+                
+                # Détecter l'intervenant référent (colonne optionnelle)
+                intervenant_referent = ""
+                if 'Intervenant_referent' in df.columns or 'Référent' in df.columns:
+                    ref_col = 'Intervenant_referent' if 'Intervenant_referent' in df.columns else 'Référent'
+                    if pd.notna(row.get(ref_col)):
+                        intervenant_referent = str(row[ref_col]).strip()
+                        if intervenant_referent.lower() == 'nan':
+                            intervenant_referent = ""
+                
                 intervention = Intervention(
                     client=client,
                     date=date,
                     duree=duree,
                     adresse=adresse_complete,
-                    intervenant=intervenant
+                    intervenant=intervenant,
+                    binome=binome,
+                    intervenant_referent=intervenant_referent,
+                    secteur=secteur
                 )
                 interventions.append(intervention)
                 
