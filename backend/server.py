@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 # Import our routes
-from routes import router
+from .routes import router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
