@@ -1,5 +1,6 @@
 import pandas as pd
 import io
+import re
 from typing import List, Tuple
 from ..models import Intervention, Intervenant
 import logging
@@ -7,6 +8,78 @@ import chardet
 from .csv_cleaner import clean_csv_file
 
 logger = logging.getLogger(__name__)
+
+def extract_city_from_address(address: str) -> str:
+    """Extrait la ville depuis une adresse pour définir le secteur"""
+    try:
+        # Nettoyer l'adresse
+        address = address.strip()
+        
+        # Patterns courants pour extraire la ville
+        # Ex: "12 rue des Vosges 67000 Strasbourg" -> "Strasbourg"
+        # Ex: "8 avenue de la Paix, Strasbourg" -> "Strasbourg"
+        
+        # Essayer de détecter via code postal + ville
+        postal_city_pattern = r'\b\d{5}\s+([A-ZÀ-ÿ][a-zà-ÿ\-\s]+)$'
+        match = re.search(postal_city_pattern, address, re.IGNORECASE)
+        if match:
+            return match.group(1).strip().title()
+        
+        # Essayer de détecter ville après virgule
+        comma_pattern = r',\s*([A-ZÀ-ÿ][a-zà-ÿ\-\s]+)$'
+        match = re.search(comma_pattern, address, re.IGNORECASE)
+        if match:
+            return match.group(1).strip().title()
+        
+        # Dernière tentative : prendre les derniers mots
+        words = address.split()
+        if len(words) >= 2:
+            # Prendre les 2 derniers mots si le dernier est une ville
+            last_words = ' '.join(words[-2:])
+            if not re.search(r'\d', last_words):  # Pas de chiffres
+                return last_words.title()
+            elif len(words) >= 1:
+                # Sinon prendre juste le dernier mot
+                last_word = words[-1]
+                if not re.search(r'\d', last_word):
+                    return last_word.title()
+        
+        # Par défaut, retourner une partie de l'adresse
+        return "Secteur Inconnu"
+        
+    except Exception as e:
+        logger.warning(f"Erreur extraction ville de '{address}': {str(e)}")
+        return "Secteur Inconnu"
+
+def detect_special_intervenants(nom_prenom: str) -> Tuple[List[str], str]:
+    """Détecte les intervenants spéciaux et leurs contraintes"""
+    specialites = []
+    plage_horaire = ""
+    
+    nom_lower = nom_prenom.lower()
+    
+    # Détecter les cas spéciaux mentionnés dans le prompt
+    if "castano" in nom_lower and "leslie" in nom_lower:
+        specialites.append("14h-22h_only")
+        plage_horaire = "14h00-22h00"
+    elif "benamrouze" in nom_lower and "larbi" in nom_lower:
+        specialites.append("volant")
+    
+    return specialites, plage_horaire
+
+def calculate_weekend_roulement(heure_hebdomaire: str) -> str:
+    """Calcule le roulement week-end selon les heures hebdomadaires"""
+    try:
+        # Extraire le nombre d'heures
+        heures = int(re.findall(r'\d+', heure_hebdomaire)[0])
+        
+        if heures >= 35:
+            # Les temps pleins sont en roulement A/B (à attribuer automatiquement)
+            return "A"  # Par défaut, l'IA décidera du roulement
+        else:
+            return "exempt"
+    except:
+        return "exempt"
 
 def detect_encoding(file_content: bytes) -> str:
     """Détecte l'encodage du fichier CSV"""
