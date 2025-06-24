@@ -31,44 +31,36 @@ class OpenAIClient:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             self.system_prompt = f.read()
 
-    async def get_travel_times_from_cache(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> tuple[Dict[str, Dict[str, int]], bool, set]:
-        """Récupère les temps de trajet depuis le cache, retourne (travel_times, all_available, missing_routes)"""
-        logger.info("🗂️ RÉCUPÉRATION des temps de trajet depuis le cache local")
+    async def get_travel_times_with_cache(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
+        """Récupère les temps de trajet avec calcul automatique des manquants"""
+        logger.info("🗂️ RÉCUPÉRATION des temps de trajet avec cache automatique")
         
-        # Collecter TOUTES les adresses
-        all_addresses = set()
+        # Collecter TOUTES les coordonnées
+        all_coordinates = set()
         
-        # Adresses des intervenants
+        # Coordonnées des intervenants
         for intervenant in intervenants:
-            all_addresses.add(intervenant.adresse)
-            logger.debug(f"Adresse intervenant: {intervenant.nom_prenom} -> {intervenant.adresse}")
+            all_coordinates.add((intervenant.latitude, intervenant.longitude))
+            logger.debug(f"Coordonnées intervenant: {intervenant.nom_prenom} -> ({intervenant.latitude:.4f},{intervenant.longitude:.4f})")
         
-        # Adresses des interventions
+        # Coordonnées des interventions
         for intervention in interventions:
-            all_addresses.add(intervention.adresse)
-            logger.debug(f"Adresse intervention: {intervention.client} -> {intervention.adresse}")
+            all_coordinates.add((intervention.latitude, intervention.longitude))
+            logger.debug(f"Coordonnées intervention: {intervention.client} -> ({intervention.latitude:.4f},{intervention.longitude:.4f})")
         
-        logger.info(f"📍 {len(all_addresses)} adresses uniques trouvées")
+        logger.info(f"📍 {len(all_coordinates)} coordonnées uniques trouvées")
         
-        # Vérifier si tous les trajets sont disponibles dans le cache
-        all_available, missing_routes = travel_cache_service.check_all_routes_available(all_addresses)
+        # Calcul automatique des trajets manquants
+        calculated_count = await travel_cache_service.calculate_and_cache_missing_routes(all_coordinates)
         
-        if all_available:
-            # Récupérer tous les temps de trajet depuis le cache
-            travel_times = travel_cache_service.get_cached_travel_times(all_addresses)
-            logger.info("✅ TOUS les trajets récupérés depuis le cache local")
-            return travel_times, True, set()
-        else:
-            logger.warning(f"❌ {len(missing_routes)} trajets manquants dans le cache")
-            
-            # Exporter un template pour les trajets manquants
-            template_path = travel_cache_service.export_missing_routes_template(missing_routes)
-            if template_path:
-                logger.info(f"📋 Template des trajets manquants créé: {template_path}")
-            
-            # Retourner les trajets disponibles et les manquants
-            available_travel_times = travel_cache_service.get_cached_travel_times(all_addresses)
-            return available_travel_times, False, missing_routes
+        if calculated_count > 0:
+            logger.info(f"✅ {calculated_count} nouveaux trajets calculés et mis en cache")
+        
+        # Récupérer tous les temps de trajet depuis le cache (maintenant complet)
+        travel_times = travel_cache_service.get_cached_travel_times(all_coordinates)
+        
+        logger.info(f"✅ TOUS les trajets récupérés depuis le cache ({len(travel_times)} adresses)")
+        return travel_times
     async def calculate_travel_times(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
         """MÉTHODE DÉPRÉCIÉE - Utiliser get_travel_times_from_cache() à la place"""
         logger.info("🗺️ CALCUL EXHAUSTIF des temps de trajet via OpenStreetMap (AUCUNE valeur par défaut)")
