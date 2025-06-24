@@ -50,24 +50,26 @@ def test_travel_time_calculation():
                 # Save planning data for other tests
                 test_results["planning_data"] = result
                 
-                # Check logs for travel time calculation
-                logs = result.get('logs', [])
-                travel_time_logs = [log for log in logs if "Calcul des temps de trajet via OpenStreetMap" in log]
+                # Since we don't have access to logs directly, we'll check if travel times are included in the planning
+                planning_events = result.get("planning", [])
                 
-                if travel_time_logs:
-                    print("✅ Found travel time calculation logs:")
-                    for log in travel_time_logs:
-                        print(f"  - {log}")
-                    
-                    # Check if we have progress logs for travel time calculation
-                    progress_logs = [log for log in logs if "Progression calcul trajets" in log]
-                    if progress_logs:
-                        print(f"✅ Found {len(progress_logs)} progress logs for travel time calculation")
-                    
+                # Check if the AI message includes travel times
+                ai_message = result.get("ai_message", "")
+                
+                if "TEMPS DE TRAJET CALCULÉS" in ai_message and "OpenStreetMap" in ai_message:
+                    print("✅ AI message includes travel times section")
+                    test_results["travel_time_calculation"] = True
+                    return True
+                
+                # If we don't have the AI message, check if planning events have travel times
+                events_with_travel_time = [event for event in planning_events if event.get("trajet_precedent") and event.get("trajet_precedent") != "0 min"]
+                
+                if events_with_travel_time:
+                    print(f"✅ Found {len(events_with_travel_time)}/{len(planning_events)} events with travel times")
                     test_results["travel_time_calculation"] = True
                     return True
                 else:
-                    print("❌ No travel time calculation logs found")
+                    print("❌ No evidence of travel time calculation found")
                     return False
             else:
                 print(f"❌ Travel time calculation test failed: {response.text}")
