@@ -1,5 +1,5 @@
-adresse_depart,adresse_arrivee,temps_minutes,date_calcul
-1 rue de la Paix 67000 Strasbourg,15 avenue des Vosges 67000 Strasbourg,10,2025-01-01T12:00:00
-15 avenue des Vosges 67000 Strasbourg,1 rue de la Paix 67000 Strasbourg,10,2025-01-01T12:00:00
-1 rue de la Paix 67000 Strasbourg,8 place Kléber 67000 Strasbourg,15,2025-01-01T12:00:00
-8 place Kléber 67000 Strasbourg,1 rue de la Paix 67000 Strasbourg,15,2025-01-01T12:00:00
+lat_depart,lon_depart,lat_arrivee,lon_arrivee,temps_minutes,date_calcul
+48.5734,7.7521,48.5794,7.7441,10,2025-01-01T12:00:00
+48.5794,7.7441,48.5734,7.7521,10,2025-01-01T12:00:00
+48.5734,7.7521,48.5856,7.7507,15,2025-01-01T12:00:00
+48.5856,7.7507,48.5734,7.7521,15,2025-01-01T12:00:00
