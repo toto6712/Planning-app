@@ -7,10 +7,11 @@ CONTRAINTES OBLIGATOIRES :
 - Journée continue : 07h-14h OU 14h-22h (pause 13h-14h sinon)
 - Max 13h/jour, min 11h repos entre journées
 - Max 6 jours consécutifs + 1 repos/semaine obligatoire
-- Week-end alterné A/B selon intervenant
+- Week-end alterné AUTOMATIQUE : Chaque intervenant ne travaille qu'UN week-end sur DEUX
 - AUCUN CHEVAUCHEMENT : Un intervenant ne peut faire qu'UNE intervention à la fois
 - AUCUN DOUBLON : Chaque intervention ne doit apparaître qu'UNE SEULE fois
 - Intervenant imposé = priorité absolue
+- Respecter les heures hebdomadaires et mensuelles des intervenants
 - Si impossible : conserver horaire, flag non_planifiable=true, couleur #ff6b6b
 
 LOGIQUE OPTIMISATION TRAJETS :
