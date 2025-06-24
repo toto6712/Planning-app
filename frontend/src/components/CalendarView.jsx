@@ -331,37 +331,128 @@ const CalendarView = ({ planningData, stats }) => {
         </div>
       )}
 
-      {/* Contrôles de vue */}
+      {/* Contrôles de vue avec filtres intégrés */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Planning des tournées
-            </CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant={currentView === 'dayGridMonth' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrentView('dayGridMonth')}
-              >
-                Mois
-              </Button>
-              <Button
-                variant={currentView === 'timeGridWeek' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrentView('timeGridWeek')}
-              >
-                Semaine
-              </Button>
-              <Button
-                variant={currentView === 'timeGridDay' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCurrentView('timeGridDay')}
-              >
-                Jour
-              </Button>
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Planning des tournées
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={currentView === 'dayGridMonth' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentView('dayGridMonth')}
+                >
+                  Mois
+                </Button>
+                <Button
+                  variant={currentView === 'timeGridWeek' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentView('timeGridWeek')}
+                >
+                  Semaine
+                </Button>
+                <Button
+                  variant={currentView === 'timeGridDay' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentView('timeGridDay')}
+                >
+                  Jour
+                </Button>
+              </div>
             </div>
+            
+            {/* Filtres de période intégrés */}
+            {planningData && planningData.length > 0 && (
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={viewFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleFilterChange('all')}
+                  >
+                    Tout ({planningData.length})
+                  </Button>
+                  <Button
+                    variant={viewFilter === 'day' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleFilterChange('day')}
+                  >
+                    Jour
+                  </Button>
+                  <Button
+                    variant={viewFilter === 'week' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleFilterChange('week')}
+                  >
+                    Semaine
+                  </Button>
+                  <Button
+                    variant={viewFilter === 'month' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleFilterChange('month')}
+                  >
+                    Mois
+                  </Button>
+                  <Button
+                    variant={viewFilter === 'custom' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      setViewFilter('custom');
+                      setShowDatePicker(!showDatePicker);
+                    }}
+                  >
+                    <CalendarRange className="h-4 w-4 mr-1" />
+                    Personnalisé
+                  </Button>
+                </div>
+                
+                {/* Sélecteur de date pour les filtres */}
+                {(viewFilter === 'day' || viewFilter === 'week' || viewFilter === 'month') && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-500">
+                      ({filteredEvents.length} intervention{filteredEvents.length > 1 ? 's' : ''})
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Sélecteur de plage personnalisée */}
+            {showDatePicker && viewFilter === 'custom' && (
+              <div className="flex flex-col sm:flex-row gap-3 p-3 bg-gray-50 rounded-lg border">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Du :</label>
+                  <input
+                    type="date"
+                    value={customDateRange.start}
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Au :</label>
+                  <input
+                    type="date"
+                    value={customDateRange.end}
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <span className="text-sm text-gray-500 self-center">
+                  ({filteredEvents.length} intervention{filteredEvents.length > 1 ? 's' : ''})
+                </span>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
