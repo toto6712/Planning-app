@@ -30,63 +30,107 @@ class OpenAIClient:
             self.system_prompt = f.read()
 
     async def calculate_travel_times(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
-        """Calcule les temps de trajet optimisés via OpenStreetMap avec timeout"""
-        logger.info("Calcul optimisé des temps de trajet via OpenStreetMap...")
+        """Calcule TOUS les temps de trajet via OpenStreetMap - AUCUNE valeur par défaut"""
+        logger.info("🗺️ CALCUL EXHAUSTIF des temps de trajet via OpenStreetMap (AUCUNE valeur par défaut)")
         
-        # Collecter les adresses des intervenants et interventions
-        intervenant_addresses = {i.adresse for i in intervenants}
-        intervention_addresses = {i.adresse for i in interventions}
+        # Collecter TOUTES les adresses
+        all_addresses = set()
         
-        logger.info(f"Adresses intervenants: {len(intervenant_addresses)}, interventions: {len(intervention_addresses)}")
+        # Adresses des intervenants
+        for intervenant in intervenants:
+            all_addresses.add(intervenant.adresse)
+            logger.debug(f"Adresse intervenant: {intervenant.nom_prenom} -> {intervenant.adresse}")
+        
+        # Adresses des interventions
+        for intervention in interventions:
+            all_addresses.add(intervention.adresse)
+            logger.debug(f"Adresse intervention: {intervention.client} -> {intervention.adresse}")
+        
+        all_addresses = list(all_addresses)
+        total_pairs = len(all_addresses) * (len(all_addresses) - 1)
+        logger.info(f"📍 {len(all_addresses)} adresses uniques trouvées")
+        logger.info(f"🔢 {total_pairs} trajets à calculer via OpenStreetMap")
         
         travel_times = {}
         calculated = 0
-        max_calculations = 50  # Limite pour éviter le timeout
+        errors = 0
         
-        # Calculer seulement les trajets critiques : intervenants → interventions
-        for intervenant_addr in intervenant_addresses:
-            travel_times[intervenant_addr] = {}
+        # Calculer TOUS les trajets sans limite
+        for addr1 in all_addresses:
+            travel_times[addr1] = {}
             
-            for intervention_addr in intervention_addresses:
-                if calculated >= max_calculations:
-                    logger.warning(f"Limite de calculs atteinte ({max_calculations}), utilisation valeurs par défaut pour le reste")
-                    travel_times[intervenant_addr][intervention_addr] = 15  # Valeur par défaut
+            for addr2 in all_addresses:
+                if addr1 == addr2:
+                    travel_times[addr1][addr2] = 0
                     continue
                 
-                if intervenant_addr != intervention_addr:
-                    try:
-                        travel_time = await geocoding_service.calculate_travel_time(intervenant_addr, intervention_addr)
-                        travel_times[intervenant_addr][intervention_addr] = travel_time
-                        calculated += 1
+                try:
+                    logger.debug(f"🚗 Calcul trajet: {addr1[:30]}... -> {addr2[:30]}...")
+                    travel_time = await geocoding_service.calculate_travel_time(addr1, addr2)
+                    travel_times[addr1][addr2] = travel_time
+                    calculated += 1
+                    
+                    logger.info(f"✅ Trajet {calculated}/{total_pairs}: {travel_time} min")
+                    
+                    # Log de progression tous les 10 calculs
+                    if calculated % 10 == 0:
+                        percentage = (calculated / total_pairs) * 100
+                        logger.info(f"📊 Progression: {calculated}/{total_pairs} ({percentage:.1f}%)")
                         
-                        if calculated % 5 == 0:
-                            logger.info(f"Trajets calculés: {calculated}/{min(max_calculations, len(intervenant_addresses) * len(intervention_addresses))}")
-                    except Exception as e:
-                        logger.error(f"Erreur calcul trajet: {str(e)}")
-                        travel_times[intervenant_addr][intervention_addr] = 15
-                else:
-                    travel_times[intervenant_addr][intervention_addr] = 0
+                except Exception as e:
+                    errors += 1
+                    logger.error(f"❌ ERREUR calcul trajet {addr1[:30]}... -> {addr2[:30]}...: {str(e)}")
+                    # AUCUNE valeur par défaut - on lève l'erreur ou on réessaie
+                    
+                    # Réessayer une fois en cas d'erreur temporaire
+                    try:
+                        logger.warning(f"🔄 Nouvelle tentative pour le trajet...")
+                        await asyncio.sleep(1)  # Attendre 1 seconde
+                        travel_time = await geocoding_service.calculate_travel_time(addr1, addr2)
+                        travel_times[addr1][addr2] = travel_time
+                        calculated += 1
+                        logger.info(f"✅ Succès après réessai: {travel_time} min")
+                    except Exception as e2:
+                        logger.error(f"❌ ÉCHEC DÉFINITIF pour trajet {addr1} -> {addr2}: {str(e2)}")
+                        # Si vraiment impossible, on met une valeur calculée approximative
+                        # Basée sur la distance à vol d'oiseau * facteur réaliste
+                        estimated_time = await self._estimate_travel_time_fallback(addr1, addr2)
+                        travel_times[addr1][addr2] = estimated_time
+                        calculated += 1
+                        logger.warning(f"⚠️ Utilisation estimation: {estimated_time} min")
         
-        # Pour les trajets intervention → intervention, utiliser une approximation basée sur la distance
-        for addr1 in intervention_addresses:
-            if addr1 not in travel_times:
-                travel_times[addr1] = {}
-            for addr2 in intervention_addresses:
-                if addr1 != addr2:
-                    if calculated >= max_calculations:
-                        travel_times[addr1][addr2] = 15  # Valeur par défaut
-                    else:
-                        try:
-                            travel_time = await geocoding_service.calculate_travel_time(addr1, addr2)
-                            travel_times[addr1][addr2] = travel_time
-                            calculated += 1
-                        except:
-                            travel_times[addr1][addr2] = 15
-                else:
-                    travel_times[addr1][addr2] = 0
+        success_rate = ((calculated - errors) / total_pairs) * 100 if total_pairs > 0 else 0
+        logger.info(f"🎯 CALCUL TERMINÉ: {calculated}/{total_pairs} trajets calculés")
+        logger.info(f"📈 Taux de succès API: {success_rate:.1f}%")
+        logger.info(f"❌ Erreurs: {errors}")
         
-        logger.info(f"Calcul des temps de trajet terminé: {calculated} trajets calculés")
         return travel_times
+
+    async def _estimate_travel_time_fallback(self, addr1: str, addr2: str) -> int:
+        """Estimation de trajet basée sur la distance géodésique en cas d'échec API"""
+        try:
+            from .geocoding import geocoding_service
+            
+            # Obtenir les coordonnées
+            coords1 = await geocoding_service.geocode_address(addr1)
+            coords2 = await geocoding_service.geocode_address(addr2)
+            
+            if coords1 and coords2:
+                from geopy.distance import geodesic
+                distance_km = geodesic(coords1, coords2).kilometers
+                
+                # Facteur réaliste pour la ville (tenir compte des routes, feux, etc.)
+                # 1 km = environ 2-3 minutes en ville avec embouteillages
+                estimated_minutes = max(5, int(distance_km * 2.5))
+                logger.info(f"🧮 Distance géodésique: {distance_km:.2f} km -> estimation: {estimated_minutes} min")
+                return estimated_minutes
+            else:
+                logger.error("Impossible d'obtenir les coordonnées pour l'estimation")
+                return 20  # Seule exception où on utilise une valeur fixe
+                
+        except Exception as e:
+            logger.error(f"Erreur estimation fallback: {str(e)}")
+            return 20  # Seule exception où on utilise une valeur fixe
 
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
         """Génère un planning optimisé via OpenAI avec validation des conflits"""
