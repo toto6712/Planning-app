@@ -29,6 +29,50 @@ class OpenAIClient:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             self.system_prompt = f.read()
 
+    async def calculate_travel_times(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
+        """Calcule les temps de trajet entre toutes les adresses via OpenStreetMap"""
+        logger.info("Calcul des temps de trajet via OpenStreetMap...")
+        
+        # Collecter toutes les adresses uniques
+        all_addresses = set()
+        
+        # Ajouter les adresses des intervenants
+        for intervenant in intervenants:
+            all_addresses.add(intervenant.adresse)
+        
+        # Ajouter les adresses des interventions
+        for intervention in interventions:
+            all_addresses.add(intervention.adresse)
+        
+        all_addresses = list(all_addresses)
+        logger.info(f"Calcul des trajets pour {len(all_addresses)} adresses uniques")
+        
+        # Calculer les temps de trajet entre toutes les paires d'adresses
+        travel_times = {}
+        total_pairs = len(all_addresses) * (len(all_addresses) - 1)
+        calculated = 0
+        
+        for addr1 in all_addresses:
+            travel_times[addr1] = {}
+            for addr2 in all_addresses:
+                if addr1 != addr2:
+                    try:
+                        travel_time = await geocoding_service.calculate_travel_time(addr1, addr2)
+                        travel_times[addr1][addr2] = travel_time
+                        calculated += 1
+                        
+                        if calculated % 10 == 0:  # Log progress every 10 calculations
+                            logger.info(f"Progression calcul trajets: {calculated}/{total_pairs}")
+                            
+                    except Exception as e:
+                        logger.error(f"Erreur calcul trajet {addr1} -> {addr2}: {str(e)}")
+                        travel_times[addr1][addr2] = 15  # Valeur par défaut
+                else:
+                    travel_times[addr1][addr2] = 0
+        
+        logger.info(f"Calcul des temps de trajet terminé: {calculated} paires calculées")
+        return travel_times
+
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
         """Génère un planning optimisé via OpenAI avec validation des conflits"""
         try:
