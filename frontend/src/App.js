@@ -119,13 +119,13 @@ function App() {
                     <div className={`flex items-center gap-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
                       <div className={`p-3 rounded-full transition-all duration-300 ${
                         isActive 
-                          ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg scale-110' 
+                          ? 'bg-gradient-to-br from-avs-blue to-avs-green text-white shadow-lg scale-110' 
                           : 'bg-gray-200'
                       }`}>
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="hidden sm:block">
-                        <p className={`font-semibold ${isCurrent ? 'text-blue-700' : ''}`}>
+                        <p className={`font-semibold ${isCurrent ? 'text-avs-blue' : ''}`}>
                           {step.title}
                         </p>
                         <p className="text-xs text-gray-500">{step.description}</p>
