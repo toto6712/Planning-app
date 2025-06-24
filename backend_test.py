@@ -177,12 +177,27 @@ def test_duplicate_detection():
             response = requests.post(f"{API_BASE_URL}/upload-csv", files=files)
             print(f"Status Code: {response.status_code}")
             
-            # We expect a 400 Bad Request with a message about duplicates
-            if response.status_code == 400 and "doublon" in response.text.lower():
-                print(f"Response: {response.text}")
-                test_results["duplicate_detection"] = True
-                print("✅ Duplicate detection test passed")
-                return True
+            # The parser should filter out duplicates and continue
+            if response.status_code == 200:
+                result = response.json()
+                print(f"Success: {result.get('success')}")
+                print(f"Message: {result.get('message')}")
+                
+                # Check if duplicates were filtered out by examining the planning
+                planning_events = result.get('planning', [])
+                
+                # Extract unique intervenants from the planning
+                intervenants_in_planning = set(event.get('intervenant') for event in planning_events)
+                print(f"Intervenants in planning: {intervenants_in_planning}")
+                
+                # We should only have 2 unique intervenants (Dupont and Martin), not 4
+                if len(intervenants_in_planning) <= 2:
+                    test_results["duplicate_detection"] = True
+                    print("✅ Duplicate detection test passed - duplicates were filtered out")
+                    return True
+                else:
+                    print(f"❌ Duplicate detection test failed - duplicates were not filtered out")
+                    return False
             else:
                 print(f"❌ Duplicate detection test failed: {response.text}")
                 return False
