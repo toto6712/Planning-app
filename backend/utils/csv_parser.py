@@ -34,28 +34,126 @@ def try_multiple_encodings(file_content: bytes) -> pd.DataFrame:
     if detected_encoding and detected_encoding not in encodings_to_try:
         encodings_to_try.insert(0, detected_encoding)
     
-    for encoding in encodings_to_try:
-        try:
-            logger.info(f"Tentative de lecture avec l'encodage: {encoding}")
-            df = pd.read_csv(io.BytesIO(file_content), encoding=encoding)
-            logger.info(f"Lecture réussie avec l'encodage: {encoding}")
-            return df
-        except UnicodeDecodeError as e:
-            logger.warning(f"Échec avec l'encodage {encoding}: {str(e)}")
-            continue
-        except Exception as e:
-            logger.warning(f"Erreur avec l'encodage {encoding}: {str(e)}")
-            continue
+    # Options de lecture CSV pour gérer différents cas
+    csv_options = [
+        {},  # Options par défaut
+        {'sep': ';'},  # Séparateur point-virgule
+        {'quotechar': '"', 'quoting': 1},  # Gestion des guillemets
+        {'skipinitialspace': True},  # Ignorer les espaces initiaux
+        {'on_bad_lines': 'skip'},  # Ignorer les lignes malformées
+        {'error_bad_lines': False, 'warn_bad_lines': True},  # Pour anciennes versions pandas
+    ]
     
-    # Si tous les encodages échouent, essayer de nettoyer le contenu
+    for encoding in encodings_to_try:
+        for options in csv_options:
+            try:
+                logger.info(f"Tentative de lecture avec l'encodage: {encoding} et options: {options}")
+                
+                # Essayer avec les options spécifiques
+                df = pd.read_csv(io.BytesIO(file_content), encoding=encoding, **options)
+                
+                # Vérifier que le DataFrame n'est pas vide et a au moins 3 colonnes
+                if not df.empty and len(df.columns) >= 3:
+                    logger.info(f"Lecture réussie avec l'encodage: {encoding} et options: {options}")
+                    return df
+                else:
+                    logger.warning(f"DataFrame vide ou pas assez de colonnes avec {encoding}")
+                    
+            except Exception as e:
+                logger.warning(f"Échec avec l'encodage {encoding} et options {options}: {str(e)}")
+                continue
+    
+    # Si tous les encodages échouent, essayer de nettoyer le contenu ligne par ligne
     try:
-        logger.info("Tentative de nettoyage du contenu avec erreurs ignorées")
+        logger.info("Tentative de nettoyage du contenu ligne par ligne")
         content_str = file_content.decode('utf-8', errors='ignore')
-        df = pd.read_csv(io.StringIO(content_str))
-        logger.info("Lecture réussie après nettoyage")
-        return df
+        
+        # Nettoyer le contenu ligne par ligne
+        lines = content_str.split('\n')
+        cleaned_lines = []
+        
+        # Garder l'en-tête
+        if lines:
+            cleaned_lines.append(lines[0])
+        
+        # Nettoyer chaque ligne de données
+        for i, line in enumerate(lines[1:], start=2):
+            if line.strip():
+                # Compter les virgules pour détecter les problèmes
+                comma_count = line.count(',')
+                
+                # Si trop de virgules, essayer de corriger
+                if comma_count > 6:  # Plus de colonnes que prévu
+                    # Essayer de détecter les virgules dans les adresses et les remplacer
+                    corrected_line = fix_csv_line(line)
+                    cleaned_lines.append(corrected_line)
+                    logger.info(f"Ligne {i} corrigée: {line} -> {corrected_line}")
+                else:
+                    cleaned_lines.append(line)
+        
+        # Créer un nouveau contenu CSV nettoyé
+        cleaned_content = '\n'.join(cleaned_lines)
+        df = pd.read_csv(io.StringIO(cleaned_content))
+        
+        if not df.empty:
+            logger.info("Lecture réussie après nettoyage ligne par ligne")
+            return df
+            
     except Exception as e:
-        raise ValueError(f"Impossible de lire le fichier avec tous les encodages testés. Erreur: {str(e)}")
+        logger.error(f"Erreur lors du nettoyage: {str(e)}")
+    
+    raise ValueError("Impossible de lire le fichier avec tous les encodages et options testés. Vérifiez le format de votre fichier CSV.")
+
+def fix_csv_line(line: str) -> str:
+    """Tente de corriger une ligne CSV malformée"""
+    try:
+        # Si la ligne contient des guillemets, essayer de les équilibrer
+        if '"' in line:
+            # Compter les guillemets
+            quote_count = line.count('"')
+            if quote_count % 2 != 0:
+                # Nombre impair de guillemets, ajouter un guillemet à la fin
+                line += '"'
+        
+        # Séparer par virgules
+        parts = line.split(',')
+        
+        # Si on a plus de 6 parties (Client,Date,Durée,Adresse,CodePostal,Intervenant)
+        if len(parts) > 6:
+            # Les 3 premières parties sont probablement Client, Date, Durée
+            client = parts[0]
+            date = parts[1] 
+            duree = parts[2]
+            
+            # L'intervenant est probablement la dernière partie (peut être vide)
+            intervenant = parts[-1] if parts[-1].strip() else ""
+            
+            # Le code postal pourrait être avant-dernier s'il existe
+            code_postal = ""
+            if len(parts) > 4 and parts[-2].strip().isdigit():
+                code_postal = parts[-2]
+                # L'adresse est tout ce qui est entre durée et code postal
+                adresse_parts = parts[3:-2]
+            else:
+                # L'adresse est tout ce qui est entre durée et intervenant
+                adresse_parts = parts[3:-1]
+            
+            # Reconstituer l'adresse
+            adresse = ','.join(adresse_parts).strip()
+            
+            # Reconstituer la ligne
+            if code_postal:
+                corrected_line = f"{client},{date},{duree},{adresse},{code_postal},{intervenant}"
+            else:
+                corrected_line = f"{client},{date},{duree},{adresse},{intervenant}"
+            
+            return corrected_line
+        
+        return line
+        
+    except Exception:
+        # Si la correction échoue, retourner la ligne originale
+        return line
 
 def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
     """Parse le fichier interventions.csv et retourne une liste d'Intervention"""
