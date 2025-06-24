@@ -276,7 +276,7 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         logger.info(f"Colonnes requises: {required_columns}")
         logger.info(f"Colonnes disponibles: {available_columns}")
         
-        # Mapping flexible des colonnes
+        # Mapping flexible des colonnes (insensible à la casse)
         column_mapping = {}
         for req_col in required_columns:
             found = False
@@ -286,6 +286,12 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     column_mapping[req_col] = avail_col
                     found = True
                     logger.info(f"Mapping direct: {req_col} -> {avail_col}")
+                    break
+                # Comparaison insensible à la casse
+                elif req_col.lower() == avail_col.lower():
+                    column_mapping[req_col] = avail_col
+                    found = True
+                    logger.info(f"Mapping insensible à la casse: {req_col} -> {avail_col}")
                     break
                 # Comparaison flexible (sans espaces, underscores, accents)
                 req_normalized = req_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '').replace(' ', '')
