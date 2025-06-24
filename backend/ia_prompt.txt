@@ -16,10 +16,8 @@ CONTRAINTES OBLIGATOIRES :
 LOGIQUE OPTIMISATION TRAJETS :
 1. PREMIÈRE intervention de la journée : partir de l'adresse domicile de l'intervenant
 2. INTERVENTIONS SUIVANTES : partir de l'adresse de la DERNIÈRE intervention terminée
-3. Calculer temps trajet entre adresses réelles (0.75 min/km, arrondi 5 min)
 4. Ajouter ce temps de trajet à l'heure de fin de l'intervention précédente
 5. Choisir intervention suivante avec trajet le PLUS COURT depuis position actuelle
-6. Laisser minimum 15 minutes entre fin intervention et début suivante
 
 RÈGLE ANTI-CONFLIT :
 - Si Intervenant A : 08h00-09h00, il ne peut PAS avoir 08h30-09h30
