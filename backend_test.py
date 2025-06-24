@@ -197,6 +197,9 @@ def run_all_tests():
     # Test health check
     health_check_result = test_health_check()
     
+    # Test duplicate detection
+    duplicate_detection_result = test_duplicate_detection()
+    
     # Test upload CSV
     upload_csv_result = test_upload_csv()
     
@@ -211,6 +214,7 @@ def run_all_tests():
     # Print summary
     print("\n=== Test Summary ===")
     print(f"Health Check: {'✅ Passed' if test_results['health_check'] else '❌ Failed'}")
+    print(f"Duplicate Detection: {'✅ Passed' if test_results['duplicate_detection'] else '❌ Failed'}")
     print(f"Upload CSV: {'✅ Passed' if test_results['upload_csv'] else '❌ Failed'}")
     print(f"Export CSV: {'✅ Passed' if test_results['export_csv'] else '❌ Failed'}")
     print(f"Export PDF: {'✅ Passed' if test_results['export_pdf'] else '❌ Failed'}")
@@ -218,6 +222,7 @@ def run_all_tests():
     # Overall result
     all_passed = all([
         test_results['health_check'],
+        test_results['duplicate_detection'],
         test_results['upload_csv'],
         test_results['export_csv'],
         test_results['export_pdf']
