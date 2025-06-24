@@ -193,7 +193,8 @@ class OpenAIClient:
                     "client": i.client,
                     "date": i.date,
                     "duree": i.duree,
-                    "adresse": i.adresse,
+                    "latitude": i.latitude,
+                    "longitude": i.longitude,
                     "secteur": i.secteur
                 }
                 # N'ajouter l'intervenant que s'il est spécifié
@@ -210,7 +211,8 @@ class OpenAIClient:
             for i, intervenant in enumerate(intervenants):
                 data = {
                     "nom_prenom": intervenant.nom_prenom,
-                    "adresse": intervenant.adresse,
+                    "latitude": intervenant.latitude,
+                    "longitude": intervenant.longitude,
                     "heure_hebdomaire": intervenant.heure_hebdomaire,
                     "heure_mensuel": intervenant.heure_mensuel,
                     "roulement_weekend": intervenant.roulement_weekend,
