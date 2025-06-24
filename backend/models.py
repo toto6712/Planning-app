@@ -35,7 +35,8 @@ class PlanningEvent(BaseModel):
     color: str
     non_planifiable: bool = False
     trajet_precedent: Optional[str] = "0 min"
-    adresse: str
+    latitude: float
+    longitude: float
     raison: Optional[str] = None  # Si non planifiable
 
 class PlanningStats(BaseModel):
