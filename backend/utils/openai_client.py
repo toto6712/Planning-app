@@ -195,7 +195,7 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                 
                 # Essayer de générer un planning de base en cas d'échec total
                 logger.warning("Génération d'un planning de base en cas d'échec de l'IA")
-                planning_data = self.generate_fallback_planning(interventions, intervenants)
+                planning_data = await self.generate_fallback_planning(interventions, intervenants, travel_times)
                 
             except Exception as e:
                 logger.error(f"Erreur inattendue lors du parsing: {str(e)}")
