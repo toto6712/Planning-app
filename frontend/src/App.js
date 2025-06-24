@@ -97,12 +97,11 @@ function App() {
             <div className="flex items-center gap-3">
               {(interventionsFile || intervenantsFile || planningData) && (
                 <Button
-                  variant="outline"
                   onClick={handleReset}
-                  className="flex items-center gap-2 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-300"
+                  className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  Reset
+                  RESET COMPLET
                 </Button>
               )}
               <Badge variant="secondary" className="bg-green-100 text-green-800 px-3 py-1">
