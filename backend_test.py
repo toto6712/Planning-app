@@ -1,0 +1,195 @@
+import requests
+import json
+import os
+import time
+from pathlib import Path
+
+# Configuration
+BACKEND_URL = "https://c3605f22-338c-4fa3-8d12-de026a805ea5.preview.emergentagent.com"
+API_BASE_URL = f"{BACKEND_URL}/api"
+
+# Test files
+INTERVENTIONS_CSV = "/app/interventions.csv"
+INTERVENANTS_CSV = "/app/intervenants.csv"
+
+# Test results
+test_results = {
+    "health_check": False,
+    "upload_csv": False,
+    "export_csv": False,
+    "export_pdf": False,
+    "planning_data": None
+}
+
+def test_health_check():
+    """Test the health check endpoint"""
+    print("\n=== Testing Health Check Endpoint ===")
+    try:
+        response = requests.get(f"{API_BASE_URL}/health")
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        
+        if response.status_code == 200 and response.json().get("status") == "ok":
+            test_results["health_check"] = True
+            print("✅ Health check test passed")
+            return True
+        else:
+            print("❌ Health check test failed")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing health check: {str(e)}")
+        return False
+
+def test_upload_csv():
+    """Test the upload CSV endpoint"""
+    print("\n=== Testing Upload CSV Endpoint ===")
+    try:
+        # Check if test files exist
+        if not os.path.exists(INTERVENTIONS_CSV) or not os.path.exists(INTERVENANTS_CSV):
+            print("❌ Test CSV files not found")
+            return False
+        
+        # Open the files
+        with open(INTERVENTIONS_CSV, 'rb') as interventions_file, open(INTERVENANTS_CSV, 'rb') as intervenants_file:
+            files = {
+                'interventions_file': ('interventions.csv', interventions_file, 'text/csv'),
+                'intervenants_file': ('intervenants.csv', intervenants_file, 'text/csv')
+            }
+            
+            # Make the request
+            print("Uploading CSV files...")
+            response = requests.post(f"{API_BASE_URL}/upload-csv", files=files)
+            print(f"Status Code: {response.status_code}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"Success: {result.get('success')}")
+                print(f"Message: {result.get('message')}")
+                print(f"Planning Events: {len(result.get('planning', []))}")
+                print(f"Stats: {result.get('stats')}")
+                
+                # Save planning data for export tests
+                test_results["planning_data"] = result
+                test_results["upload_csv"] = True
+                print("✅ Upload CSV test passed")
+                return True
+            else:
+                print(f"❌ Upload CSV test failed: {response.text}")
+                return False
+    except Exception as e:
+        print(f"❌ Error testing upload CSV: {str(e)}")
+        return False
+
+def test_export_csv():
+    """Test the export CSV endpoint"""
+    print("\n=== Testing Export CSV Endpoint ===")
+    try:
+        if not test_results["planning_data"]:
+            print("❌ No planning data available for export test")
+            return False
+        
+        planning_events = test_results["planning_data"].get("planning", [])
+        
+        # Make the request
+        response = requests.post(
+            f"{API_BASE_URL}/export-csv",
+            json=planning_events
+        )
+        
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            # Save the CSV file
+            csv_content = response.content
+            with open("/app/exported_planning.csv", "wb") as f:
+                f.write(csv_content)
+            
+            print(f"CSV file saved to /app/exported_planning.csv")
+            print(f"Content-Type: {response.headers.get('Content-Type')}")
+            print(f"Content-Disposition: {response.headers.get('Content-Disposition')}")
+            
+            test_results["export_csv"] = True
+            print("✅ Export CSV test passed")
+            return True
+        else:
+            print(f"❌ Export CSV test failed: {response.text}")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing export CSV: {str(e)}")
+        return False
+
+def test_export_pdf():
+    """Test the export PDF endpoint"""
+    print("\n=== Testing Export PDF Endpoint ===")
+    try:
+        if not test_results["planning_data"]:
+            print("❌ No planning data available for export test")
+            return False
+        
+        # Make the request
+        response = requests.post(
+            f"{API_BASE_URL}/export-pdf",
+            json=test_results["planning_data"]
+        )
+        
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            # Save the PDF file
+            pdf_content = response.content
+            with open("/app/exported_planning.pdf", "wb") as f:
+                f.write(pdf_content)
+            
+            print(f"PDF file saved to /app/exported_planning.pdf")
+            print(f"Content-Type: {response.headers.get('Content-Type')}")
+            print(f"Content-Disposition: {response.headers.get('Content-Disposition')}")
+            
+            test_results["export_pdf"] = True
+            print("✅ Export PDF test passed")
+            return True
+        else:
+            print(f"❌ Export PDF test failed: {response.text}")
+            return False
+    except Exception as e:
+        print(f"❌ Error testing export PDF: {str(e)}")
+        return False
+
+def run_all_tests():
+    """Run all tests and print summary"""
+    print("\n=== Starting Backend API Tests ===")
+    
+    # Test health check
+    health_check_result = test_health_check()
+    
+    # Test upload CSV
+    upload_csv_result = test_upload_csv()
+    
+    # If upload succeeded, test exports
+    if upload_csv_result:
+        # Test export CSV
+        export_csv_result = test_export_csv()
+        
+        # Test export PDF
+        export_pdf_result = test_export_pdf()
+    
+    # Print summary
+    print("\n=== Test Summary ===")
+    print(f"Health Check: {'✅ Passed' if test_results['health_check'] else '❌ Failed'}")
+    print(f"Upload CSV: {'✅ Passed' if test_results['upload_csv'] else '❌ Failed'}")
+    print(f"Export CSV: {'✅ Passed' if test_results['export_csv'] else '❌ Failed'}")
+    print(f"Export PDF: {'✅ Passed' if test_results['export_pdf'] else '❌ Failed'}")
+    
+    # Overall result
+    all_passed = all([
+        test_results['health_check'],
+        test_results['upload_csv'],
+        test_results['export_csv'],
+        test_results['export_pdf']
+    ])
+    
+    print(f"\nOverall Result: {'✅ All tests passed' if all_passed else '❌ Some tests failed'}")
+    
+    return all_passed
+
+if __name__ == "__main__":
+    run_all_tests()
