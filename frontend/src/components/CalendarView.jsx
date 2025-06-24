@@ -7,7 +7,7 @@ import frLocale from '@fullcalendar/core/locales/fr';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Calendar, Clock, MapPin, User, AlertTriangle, CheckCircle, Filter } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, AlertTriangle, CheckCircle, Filter, CalendarRange } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 const CalendarView = ({ planningData, stats }) => {
