@@ -339,9 +339,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Upload CSV Endpoint"
-    - "CSV Parser"
-    - "Nouveau Format CSV Intervenants"
+    - "Logo AVS Autonomie"
+    - "Couleurs Charte Graphique"
+    - "Interface Upload CSV"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
