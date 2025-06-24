@@ -25,6 +25,7 @@ jq>=1.6.0
 typer>=0.9.0
 openai>=1.12.0
 geopy>=2.4.0
+geographiclib>=2.0
 fpdf2>=2.7.0
 chardet>=5.2.0
 httpx>=0.28.0
