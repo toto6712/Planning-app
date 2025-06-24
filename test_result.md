@@ -285,12 +285,13 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Chargement Initial"
-    - "Interface Upload CSV"
-    - "Affichage Calendrier"
-    - "Boutons Export"
-    - "Responsive Design"
-  stuck_tasks: []
+    - "Upload CSV Endpoint"
+    - "CSV Parser"
+    - "Nouveau Format CSV Intervenants"
+  stuck_tasks:
+    - "Upload CSV Endpoint"
+    - "CSV Parser"
+    - "Nouveau Format CSV Intervenants"
   test_all: true
   test_priority: "high_first"
 
