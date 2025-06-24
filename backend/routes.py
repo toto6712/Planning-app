@@ -139,3 +139,87 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "service": "planning-tournees-api"
     }
+
+@router.get("/travel-cache/stats")
+async def get_travel_cache_stats():
+    """Récupère les statistiques du cache des trajets"""
+    try:
+        stats = travel_cache_service.get_cache_stats()
+        return {
+            "success": True,
+            "stats": stats
+        }
+    except Exception as e:
+        logger.error(f"Erreur récupération stats cache: {str(e)}")
+        raise HTTPException(500, f"Erreur stats cache: {str(e)}")
+
+@router.post("/travel-cache/import")
+async def import_travel_times(file: UploadFile = File(...)):
+    """Importe des temps de trajet depuis un fichier CSV"""
+    try:
+        if not file.filename.endswith('.csv'):
+            raise HTTPException(400, "Le fichier doit être au format CSV")
+        
+        # Sauvegarder le fichier temporairement
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as temp_file:
+            content = await file.read()
+            temp_file.write(content)
+            temp_path = temp_file.name
+        
+        # Importer les trajets
+        imported_count = travel_cache_service.import_travel_times_from_csv(temp_path)
+        
+        # Sauvegarder le cache
+        travel_cache_service.save_cache()
+        
+        # Nettoyer le fichier temporaire
+        os.unlink(temp_path)
+        
+        return {
+            "success": True,
+            "message": f"Importé {imported_count} trajets avec succès",
+            "imported_count": imported_count
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erreur import trajets: {str(e)}")
+        raise HTTPException(500, f"Erreur import: {str(e)}")
+
+@router.post("/travel-cache/clear")
+async def clear_travel_cache():
+    """Vide complètement le cache des trajets"""
+    try:
+        travel_cache_service.clear_cache()
+        return {
+            "success": True,
+            "message": "Cache des trajets vidé avec succès"
+        }
+    except Exception as e:
+        logger.error(f"Erreur vidage cache: {str(e)}")
+        raise HTTPException(500, f"Erreur vidage cache: {str(e)}")
+
+@router.get("/travel-cache/download-template/{filename}")
+async def download_missing_routes_template(filename: str):
+    """Télécharge le template des trajets manquants"""
+    try:
+        file_path = f"/app/data/{filename}"
+        if not os.path.exists(file_path):
+            raise HTTPException(404, "Fichier template non trouvé")
+        
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        
+        return StreamingResponse(
+            io.BytesIO(content),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erreur téléchargement template: {str(e)}")
+        raise HTTPException(500, f"Erreur téléchargement: {str(e)}")
