@@ -29,53 +29,52 @@ class OpenAIClient:
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
         """Génère un planning optimisé via OpenAI"""
         try:
-            # Préparer les données pour l'IA
-            interventions_data = [
-                {
+            # Préparer les données en format compact pour l'IA
+            interventions_data = []
+            for i in interventions:
+                data = {
                     "client": i.client,
                     "date": i.date,
                     "duree": i.duree,
-                    "adresse": i.adresse,
-                    "intervenant_impose": i.intervenant
+                    "adresse": i.adresse
                 }
-                for i in interventions
-            ]
+                # N'ajouter l'intervenant que s'il est spécifié
+                if i.intervenant:
+                    data["intervenant_impose"] = i.intervenant
+                interventions_data.append(data)
             
-            intervenants_data = [
-                {
+            intervenants_data = []
+            for i in intervenants:
+                data = {
                     "nom": i.nom,
                     "adresse": i.adresse,
                     "disponibilites": i.disponibilites,
-                    "repos": i.repos,
                     "weekend": i.weekend
                 }
-                for i in intervenants
-            ]
+                # N'ajouter le repos que s'il existe
+                if i.repos:
+                    data["repos"] = i.repos
+                intervenants_data.append(data)
             
-            # Construire le message utilisateur
-            user_message = f"""
-Voici les données à traiter :
+            # Construire un message utilisateur compact
+            user_message = f"""INTERVENTIONS:
+{json.dumps(interventions_data, ensure_ascii=False)}
 
-INTERVENTIONS :
-{json.dumps(interventions_data, ensure_ascii=False, indent=2)}
-
-INTERVENANTS :
-{json.dumps(intervenants_data, ensure_ascii=False, indent=2)}
-
-Génère le planning optimisé en respectant toutes les contraintes.
-"""
+INTERVENANTS:
+{json.dumps(intervenants_data, ensure_ascii=False)}"""
             
             logger.info("Envoi de la requête à OpenAI...")
+            logger.info(f"Taille du message: ~{len(user_message)} caractères")
             
-            # Appel à l'API OpenAI
+            # Utiliser GPT-4o-mini qui a des limites plus élevées et coûte moins cher
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o-mini",  # Changement de modèle
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": user_message}
                 ],
-                temperature=0.3,  # Faible température pour plus de cohérence
-                max_tokens=4000
+                temperature=0.1,  # Très faible pour cohérence
+                max_tokens=3000   # Limiter la réponse
             )
             
             # Extraire la réponse
@@ -88,7 +87,18 @@ Génère le planning optimisé en respectant toutes les contraintes.
             except json.JSONDecodeError as e:
                 logger.error(f"Erreur parsing JSON OpenAI: {str(e)}")
                 logger.error(f"Contenu reçu: {planning_json}")
-                raise ValueError(f"Réponse OpenAI invalide: {str(e)}")
+                # Essayer de nettoyer la réponse si elle contient du texte en plus
+                if "```json" in planning_json:
+                    # Extraire le JSON entre les balises
+                    start = planning_json.find("[")
+                    end = planning_json.rfind("]") + 1
+                    if start >= 0 and end > start:
+                        clean_json = planning_json[start:end]
+                        planning_data = json.loads(clean_json)
+                    else:
+                        raise ValueError(f"Impossible d'extraire le JSON: {str(e)}")
+                else:
+                    raise ValueError(f"Réponse OpenAI invalide: {str(e)}")
             
             # Convertir en objets PlanningEvent
             planning_events = []
@@ -115,7 +125,10 @@ Génère le planning optimisé en respectant toutes les contraintes.
             
         except openai.APIError as e:
             logger.error(f"Erreur API OpenAI: {str(e)}")
-            raise ValueError(f"Erreur OpenAI: {str(e)}")
+            if "rate_limit_exceeded" in str(e):
+                raise ValueError("Limite de tokens OpenAI dépassée. Réessayez dans 1 minute ou contactez votre administrateur pour augmenter les limites.")
+            else:
+                raise ValueError(f"Erreur OpenAI: {str(e)}")
         except Exception as e:
             logger.error(f"Erreur génération planning: {str(e)}")
             raise ValueError(f"Erreur interne: {str(e)}")
