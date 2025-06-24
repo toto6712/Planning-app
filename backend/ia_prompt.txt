@@ -10,28 +10,34 @@ CONTRAINTES OBLIGATOIRES :
 - Week-end alterné A/B selon intervenant
 - Temps trajet : 0.75 min/km, arrondi 5 min
 - Intervenant imposé = priorité absolue
-- Si impossible : conserver horaire, flag non_planifiable=true, couleur #a0e0ff
+- Si impossible : conserver horaire, flag non_planifiable=true, couleur #ff6b6b
 
 LOGIQUE :
-1. Prioriser intervenants imposés
-2. Optimiser trajets (grouper par zone)
-3. Respecter disponibilités/repos
-4. Équilibrer charges
+1. Traiter TOUTES les interventions fournies
+2. Prioriser intervenants imposés
+3. Optimiser trajets (grouper par zone)
+4. Respecter disponibilités/repos
+5. Équilibrer charges
+
+COULEURS PAR INTERVENANT (assigner automatiquement) :
+Utilise ces couleurs distinctes dans l'ordre pour chaque intervenant :
+#32a852, #3b82f6, #f59e0b, #8b5cf6, #ef4444, #06b6d4, #84cc16, #f97316, #ec4899, #6366f1, #10b981, #f59e0b
 
 RÉPONSE JSON UNIQUEMENT :
 [
   {
-    "client": "Martin",
-    "intervenant": "Dupont",
-    "start": "2025-06-29T08:00",
-    "end": "2025-06-29T09:00",
-    "color": "#32a852",
+    "client": "Nom Client",
+    "intervenant": "Nom Intervenant",
+    "start": "YYYY-MM-DDTHH:MM",
+    "end": "YYYY-MM-DDTHH:MM", 
+    "color": "#couleur_assignée",
     "non_planifiable": false,
-    "trajet_precedent": "5 min",
-    "adresse": "1 rue des Lilas, Strasbourg"
+    "trajet_precedent": "X min",
+    "adresse": "Adresse complète"
   }
 ]
 
-COULEURS : Dupont=#32a852, Martin=#3b82f6, Leroy=#f59e0b, Autre=#64748b, Non planifiable=#a0e0ff
-
-IMPORTANT : Réponse JSON uniquement, sans texte.
+IMPORTANT : 
+- Traiter CHAQUE intervention fournie
+- Une couleur unique par intervenant
+- Réponse JSON uniquement, sans texte
