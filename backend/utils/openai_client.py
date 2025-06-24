@@ -68,7 +68,8 @@ class OpenAIClient:
             # Retourner les trajets disponibles et les manquants
             available_travel_times = travel_cache_service.get_cached_travel_times(all_addresses)
             return available_travel_times, False, missing_routes
-        """Calcule TOUS les temps de trajet via OpenStreetMap - AUCUNE valeur par défaut"""
+    async def calculate_travel_times(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
+        """MÉTHODE DÉPRÉCIÉE - Utiliser get_travel_times_from_cache() à la place"""
         logger.info("🗺️ CALCUL EXHAUSTIF des temps de trajet via OpenStreetMap (AUCUNE valeur par défaut)")
         
         # Collecter TOUTES les adresses
