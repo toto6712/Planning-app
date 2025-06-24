@@ -1,34 +1,41 @@
-# 🗺️ Système de Cache des Trajets - Mode d'emploi
+# 🗺️ Système de Cache des Trajets avec Coordonnées GPS - Mode d'emploi
 
 ## 📋 Vue d'ensemble
 
-Le système a été optimisé pour éviter les calculs répétitifs de temps de trajet. Au lieu d'appeler l'API OpenStreetMap à chaque upload, l'application utilise maintenant un **cache persistant** des temps de trajet.
+Le système a été optimisé pour utiliser **des coordonnées GPS** au lieu d'adresses textuelles et calculer automatiquement les temps de trajet via **OSRM (OpenStreetMap Routing Machine)**. 
 
 ## 🔄 Processus de fonctionnement
 
-### 1. Upload des fichiers CSV
-- Vous uploadez vos fichiers `interventions.csv` et `intervenants.csv` comme d'habitude
-- Le système extrait toutes les adresses des fichiers
+### 1. Format CSV modifié
+**IMPORTANT** : Les fichiers CSV doivent maintenant utiliser des coordonnées GPS au lieu d'adresses :
 
-### 2. Vérification du cache
-- ✅ **Si tous les trajets sont dans le cache** → Planning généré immédiatement
-- ❌ **Si des trajets manquent** → Erreur avec liste des trajets manquants
-
-### 3. Gestion des trajets manquants
-Si des trajets manquent, vous avez plusieurs options :
-
-#### Option A : Fichier template automatique
-1. Un fichier `trajets_manquants.csv` est automatiquement créé dans `/app/data/`
-2. Complétez les temps de trajet manquants dans ce fichier
-3. Importez-le via l'endpoint `/api/travel-cache/import`
-
-#### Option B : Fichier manuel
-Créez un fichier CSV avec les colonnes :
+#### Interventions.csv
 ```csv
-adresse_depart,adresse_arrivee,temps_minutes,date_calcul
-1 rue de la Paix 67000 Strasbourg,15 avenue des Vosges 67000 Strasbourg,10,2025-01-01T12:00:00
-15 avenue des Vosges 67000 Strasbourg,1 rue de la Paix 67000 Strasbourg,12,2025-01-01T12:00:00
+Client,Date,Durée,Latitude,Longitude,Intervenant
+Mme Martin,29/06/2025 08:00,01:00,48.5734,7.7521,
+M. Dupont,29/06/2025 09:30,01:30,48.5794,7.7441,Jean Dupont
 ```
+
+#### Intervenants.csv  
+```csv
+Nom_Prenom,Latitude,Longitude,Heure_Mensuel,Heure_hebdomadaire
+Jean Dupont,48.5800,7.7500,151h,35h
+Marie Durand,48.5750,7.7450,169h,39h
+```
+
+### 2. Processus automatique à l'upload
+1. **Upload des fichiers** → Extraction des coordonnées GPS
+2. **Vérification du cache** → Quels trajets sont déjà connus ?
+3. **Calcul automatique** → Les trajets manquants sont calculés via OSRM
+4. **Enrichissement du cache** → Nouveaux trajets ajoutés automatiquement
+5. **Génération du planning** → L'IA utilise tous les trajets disponibles
+
+### 3. Avantages du nouveau système
+- ✅ **Calcul automatique** des trajets manquants (plus besoin de fichiers templates)
+- ✅ **Précision GPS** au lieu d'adresses textuelles
+- ✅ **Enrichissement continu** du cache à chaque upload
+- ✅ **API gratuite OSRM** (OpenStreetMap)
+- ✅ **Fallback 15min** si calcul impossible
 
 ## 🛠️ Endpoints de gestion du cache
 
@@ -36,13 +43,7 @@ adresse_depart,adresse_arrivee,temps_minutes,date_calcul
 ```
 GET /api/travel-cache/stats
 ```
-Retourne les statistiques du cache (nombre de trajets, adresses uniques, etc.)
-
-### 📥 Import de trajets
-```
-POST /api/travel-cache/import
-```
-Importe des temps de trajet depuis un fichier CSV
+Retourne les statistiques du cache (nombre de trajets, coordonnées uniques, etc.)
 
 ### 🗑️ Vider le cache
 ```
@@ -50,70 +51,61 @@ POST /api/travel-cache/clear
 ```
 Vide complètement le cache (attention : supprime tous les trajets !)
 
-### 📋 Télécharger template
-```
-GET /api/travel-cache/download-template/trajets_manquants.csv
-```
-Télécharge le fichier template des trajets manquants
-
 ## 📂 Structure du fichier de cache
 
 **Fichier :** `/app/data/travel_times_cache.csv`
 
 **Format :**
 ```csv
-adresse_depart,adresse_arrivee,temps_minutes,date_calcul
-Adresse complète de départ,Adresse complète d'arrivée,Temps en minutes,Date ISO
+lat_depart,lon_depart,lat_arrivee,lon_arrivee,temps_minutes,date_calcul
+48.5734,7.7521,48.5794,7.7441,10,2025-01-01T12:00:00
+48.5794,7.7441,48.5734,7.7521,12,2025-01-01T12:00:00
 ```
 
-**Exemple :**
-```csv
-adresse_depart,adresse_arrivee,temps_minutes,date_calcul
-1 rue de la Paix 67000 Strasbourg,15 avenue des Vosges 67000 Strasbourg,10,2025-01-01T12:00:00
-15 avenue des Vosges 67000 Strasbourg,1 rue de la Paix 67000 Strasbourg,12,2025-01-01T12:00:00
-8 place Kléber 67000 Strasbourg,1 rue de la Paix 67000 Strasbourg,15,2025-01-01T12:00:00
-```
+## ⚡ Workflow recommandé
 
-## ⚡ Avantages du système
+1. **Préparer vos CSV** avec coordonnées GPS (via Google ou autre géocodeur)
+2. **Upload normal** via l'interface
+3. **Calcul automatique** : Le système calcule les trajets manquants
+4. **Génération du planning** : L'IA utilise tous les trajets
+5. **Cache enrichi** : Les nouveaux trajets sont conservés pour les prochains uploads
 
-1. **Performance** : Plus de calculs API à chaque upload
-2. **Réutilisation** : Les trajets sont conservés entre les sessions
-3. **Accumulation** : La base de trajets s'enrichit au fil du temps
-4. **Contrôle** : Vous maîtrisez les temps de trajet utilisés
-5. **Flexibilité** : Possibilité d'ajuster les temps selon vos connaissances terrain
+## 🎯 Avantages par rapport à l'ancien système
 
-## 🔧 Workflow recommandé
-
-1. **Premier upload** : Des trajets manqueront, c'est normal
-2. **Compléter le template** : Ajoutez les temps de trajet manquants
-3. **Importer** : Utilisez l'endpoint d'import
-4. **Réessayer** : Relancez la génération de planning
-5. **Accumulation** : Au fil des uploads, de moins en moins de trajets manqueront
+| Ancien système | Nouveau système |
+|----------------|-----------------|
+| Adresses textuelles | Coordonnées GPS précises |
+| Calcul manuel des trajets | Calcul automatique via OSRM |
+| Gestion manuelle du cache | Enrichissement automatique |
+| Erreurs de géocodage | Coordonnées fiables |
+| Processus complexe | Processus simplifié |
 
 ## 💡 Conseils
 
-- **Cohérence des adresses** : Utilisez toujours le même format d'adresse
-- **Bidirectionnel** : N'oubliez pas les trajets dans les deux sens (A→B et B→A)
-- **Temps réalistes** : Tenez compte des conditions de circulation de votre zone
-- **Sauvegarde** : Le fichier `/app/data/travel_times_cache.csv` peut être sauvegardé
+- **Coordonnées précises** : Utilisez des coordonnées avec 4-6 décimales (ex: 48.5734)
+- **Géocodage préalable** : Obtenez vos coordonnées via Google Maps ou autre service
+- **Format cohérent** : Respectez le format decimal (48.5734, pas 48°34'24")
+- **Sauvegarde** : Le cache `/app/data/travel_times_cache.csv` se construit automatiquement
 
-## 🚨 Messages d'erreur
+## 🚀 Migration depuis l'ancien système
 
-Si vous voyez :
-```
-❌ TRAJETS MANQUANTS dans le cache (X trajets):
-• Adresse1 → Adresse2
-• Adresse3 → Adresse4
-...
-📋 Un fichier template a été créé: /app/data/trajets_manquants.csv
-```
+Si vous avez des fichiers avec des adresses :
+1. Géocodez vos adresses pour obtenir latitude/longitude
+2. Modifiez vos CSV pour utiliser le nouveau format
+3. Uploadez normalement - le système calculera automatiquement les trajets
 
-Cela signifie que des trajets manquent dans votre cache. Suivez les instructions pour les ajouter.
+## ⚙️ Configuration OSRM
 
-## 🔄 Migration depuis l'ancien système
+Le système utilise l'API publique gratuite d'OSRM :
+- **URL** : `http://router.project-osrm.org/route/v1/driving`
+- **Limites** : Délai de 100ms entre requêtes pour respecter l'usage équitable
+- **Fallback** : 15 minutes si le calcul échoue
+- **Gratuit** : Aucune clé API nécessaire
 
-L'ancien système qui calculait automatiquement via OpenStreetMap a été remplacé. Les avantages du nouveau système :
-- Plus rapide
-- Plus fiable
-- Économise les appels API
-- Vous avez le contrôle total
+## 🔧 Dépannage
+
+**Erreur "Coordonnées invalides"** : Vérifiez que vos coordonnées sont au format décimal (-90 à 90 pour latitude, -180 à 180 pour longitude)
+
+**Temps de calcul long** : Normal au premier upload avec beaucoup de nouvelles coordonnées. Les uploads suivants seront instantanés.
+
+**Trajets à 15min** : Indique un échec de calcul OSRM (coordonnées inaccessibles, problème réseau, etc.)
