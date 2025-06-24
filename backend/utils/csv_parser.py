@@ -266,6 +266,9 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         # Nettoyer les noms de colonnes
         df.columns = df.columns.str.strip()
         
+        # Supprimer les lignes complètement vides
+        df = df.dropna(how='all')
+        
         # Vérifier les colonnes obligatoires (flexible)
         required_columns = ['Nom', 'Adresse', 'Disponibilités', 'Week-end']
         available_columns = df.columns.tolist()
@@ -305,19 +308,50 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         intervenants = []
         for index, row in df.iterrows():
             try:
+                # Vérifier que les colonnes critiques ne sont pas vides
+                nom = str(row[column_mapping['Nom']]).strip()
+                adresse = str(row[column_mapping['Adresse']]).strip()
+                disponibilites = str(row[column_mapping['Disponibilités']]).strip()
+                weekend = str(row[column_mapping['Week-end']]).strip()
+                
+                # Ignorer les lignes avec des valeurs manquantes critiques
+                if (pd.isna(row[column_mapping['Nom']]) or 
+                    pd.isna(row[column_mapping['Adresse']]) or 
+                    pd.isna(row[column_mapping['Disponibilités']]) or
+                    pd.isna(row[column_mapping['Week-end']]) or
+                    nom.lower() in ['nan', ''] or 
+                    adresse.lower() in ['nan', ''] or
+                    disponibilites.lower() in ['nan', ''] or
+                    weekend.lower() in ['nan', '']):
+                    logger.warning(f"Ligne {index + 2} ignorée : données manquantes critiques")
+                    continue
+                
+                # Récupérer les repos (peut être vide)
+                repos = ""
+                if repos_col and pd.notna(row.get(repos_col)):
+                    repos = str(row[repos_col]).strip()
+                    if repos.lower() == 'nan':
+                        repos = ""
+                
                 intervenant = Intervenant(
-                    nom=str(row[column_mapping['Nom']]).strip(),
-                    adresse=str(row[column_mapping['Adresse']]).strip(),
-                    disponibilites=str(row[column_mapping['Disponibilités']]).strip(),
-                    repos=str(row.get(repos_col, '')).strip() if repos_col else '',
-                    weekend=str(row[column_mapping['Week-end']]).strip()
+                    nom=nom,
+                    adresse=adresse,
+                    disponibilites=disponibilites,
+                    repos=repos,
+                    weekend=weekend
                 )
                 intervenants.append(intervenant)
+                
+                logger.debug(f"Intervenant créé: {intervenant.nom}")
+                
             except Exception as e:
-                logger.warning(f"Erreur ligne {index + 2}: {str(e)}")
+                logger.warning(f"Erreur ligne {index + 2}: {str(e)} - Ligne ignorée")
                 continue
         
-        logger.info(f"Parsed {len(intervenants)} intervenants")
+        if not intervenants:
+            raise ValueError("Aucun intervenant valide trouvé dans le fichier")
+        
+        logger.info(f"Parsed {len(intervenants)} intervenants valides")
         return intervenants
         
     except Exception as e:
