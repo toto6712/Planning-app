@@ -287,9 +287,10 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     found = True
                     logger.info(f"Mapping direct: {req_col} -> {avail_col}")
                     break
-                # Comparaison flexible
-                elif (req_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '') == 
-                    avail_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '').replace(' ', '')):
+                # Comparaison flexible (sans espaces, underscores, accents)
+                req_normalized = req_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '').replace(' ', '')
+                avail_normalized = avail_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '').replace(' ', '')
+                if req_normalized == avail_normalized:
                     column_mapping[req_col] = avail_col
                     found = True
                     logger.info(f"Mapping flexible: {req_col} -> {avail_col}")
