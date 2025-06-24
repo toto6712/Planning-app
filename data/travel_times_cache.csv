@@ -1,3 +1,5 @@
 adresse_depart,adresse_arrivee,temps_minutes,date_calcul
-# Exemple de trajets pré-calculés - vous pouvez ajouter vos propres trajets ici
-# Format: adresse_depart,adresse_arrivee,temps_minutes,date_calcul
+1 rue de la Paix 67000 Strasbourg,15 avenue des Vosges 67000 Strasbourg,10,2025-01-01T12:00:00
+15 avenue des Vosges 67000 Strasbourg,1 rue de la Paix 67000 Strasbourg,10,2025-01-01T12:00:00
+1 rue de la Paix 67000 Strasbourg,8 place Kléber 67000 Strasbourg,15,2025-01-01T12:00:00
+8 place Kléber 67000 Strasbourg,1 rue de la Paix 67000 Strasbourg,15,2025-01-01T12:00:00
