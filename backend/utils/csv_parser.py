@@ -348,15 +348,31 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                 
                 # Récupérer les repos (peut être vide)
                 repos = ""
+                jours_travail = str(row[column_mapping['Jours_travail']]).strip()
+                horaires = str(row[column_mapping['Horaires']]).strip()
+                
                 if repos_col and pd.notna(row.get(repos_col)):
                     repos = str(row[repos_col]).strip()
                     if repos.lower() == 'nan':
                         repos = ""
                 
+                if temps_hebdo_col and pd.notna(row.get(temps_hebdo_col)):
+                    temps_hebdo = str(row[temps_hebdo_col]).strip()
+                    if temps_hebdo.lower() == 'nan':
+                        temps_hebdo = ""
+                
+                if temps_mensuel_col and pd.notna(row.get(temps_mensuel_col)):
+                    temps_mensuel = str(row[temps_mensuel_col]).strip()
+                    if temps_mensuel.lower() == 'nan':
+                        temps_mensuel = ""
+                
                 intervenant = Intervenant(
                     nom=nom,
                     adresse=adresse,
-                    disponibilites=disponibilites,
+                    jours_travail=jours_travail,
+                    horaires=horaires,
+                    temps_hebdo=temps_hebdo,
+                    temps_mensuel=temps_mensuel,
                     repos=repos,
                     weekend=weekend
                 )
