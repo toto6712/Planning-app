@@ -30,47 +30,62 @@ class OpenAIClient:
             self.system_prompt = f.read()
 
     async def calculate_travel_times(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
-        """Calcule les temps de trajet entre toutes les adresses via OpenStreetMap"""
-        logger.info("Calcul des temps de trajet via OpenStreetMap...")
+        """Calcule les temps de trajet optimisés via OpenStreetMap avec timeout"""
+        logger.info("Calcul optimisé des temps de trajet via OpenStreetMap...")
         
-        # Collecter toutes les adresses uniques
-        all_addresses = set()
+        # Collecter les adresses des intervenants et interventions
+        intervenant_addresses = {i.adresse for i in intervenants}
+        intervention_addresses = {i.adresse for i in interventions}
         
-        # Ajouter les adresses des intervenants
-        for intervenant in intervenants:
-            all_addresses.add(intervenant.adresse)
+        logger.info(f"Adresses intervenants: {len(intervenant_addresses)}, interventions: {len(intervention_addresses)}")
         
-        # Ajouter les adresses des interventions
-        for intervention in interventions:
-            all_addresses.add(intervention.adresse)
-        
-        all_addresses = list(all_addresses)
-        logger.info(f"Calcul des trajets pour {len(all_addresses)} adresses uniques")
-        
-        # Calculer les temps de trajet entre toutes les paires d'adresses
         travel_times = {}
-        total_pairs = len(all_addresses) * (len(all_addresses) - 1)
         calculated = 0
+        max_calculations = 50  # Limite pour éviter le timeout
         
-        for addr1 in all_addresses:
-            travel_times[addr1] = {}
-            for addr2 in all_addresses:
-                if addr1 != addr2:
+        # Calculer seulement les trajets critiques : intervenants → interventions
+        for intervenant_addr in intervenant_addresses:
+            travel_times[intervenant_addr] = {}
+            
+            for intervention_addr in intervention_addresses:
+                if calculated >= max_calculations:
+                    logger.warning(f"Limite de calculs atteinte ({max_calculations}), utilisation valeurs par défaut pour le reste")
+                    travel_times[intervenant_addr][intervention_addr] = 15  # Valeur par défaut
+                    continue
+                
+                if intervenant_addr != intervention_addr:
                     try:
-                        travel_time = await geocoding_service.calculate_travel_time(addr1, addr2)
-                        travel_times[addr1][addr2] = travel_time
+                        travel_time = await geocoding_service.calculate_travel_time(intervenant_addr, intervention_addr)
+                        travel_times[intervenant_addr][intervention_addr] = travel_time
                         calculated += 1
                         
-                        if calculated % 10 == 0:  # Log progress every 10 calculations
-                            logger.info(f"Progression calcul trajets: {calculated}/{total_pairs}")
-                            
+                        if calculated % 5 == 0:
+                            logger.info(f"Trajets calculés: {calculated}/{min(max_calculations, len(intervenant_addresses) * len(intervention_addresses))}")
                     except Exception as e:
-                        logger.error(f"Erreur calcul trajet {addr1} -> {addr2}: {str(e)}")
+                        logger.error(f"Erreur calcul trajet: {str(e)}")
+                        travel_times[intervenant_addr][intervention_addr] = 15
+                else:
+                    travel_times[intervenant_addr][intervention_addr] = 0
+        
+        # Pour les trajets intervention → intervention, utiliser une approximation basée sur la distance
+        for addr1 in intervention_addresses:
+            if addr1 not in travel_times:
+                travel_times[addr1] = {}
+            for addr2 in intervention_addresses:
+                if addr1 != addr2:
+                    if calculated >= max_calculations:
                         travel_times[addr1][addr2] = 15  # Valeur par défaut
+                    else:
+                        try:
+                            travel_time = await geocoding_service.calculate_travel_time(addr1, addr2)
+                            travel_times[addr1][addr2] = travel_time
+                            calculated += 1
+                        except:
+                            travel_times[addr1][addr2] = 15
                 else:
                     travel_times[addr1][addr2] = 0
         
-        logger.info(f"Calcul des temps de trajet terminé: {calculated} paires calculées")
+        logger.info(f"Calcul des temps de trajet terminé: {calculated} trajets calculés")
         return travel_times
 
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
