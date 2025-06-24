@@ -330,6 +330,18 @@ frontend:
         -working: true
         -agent: "testing"
         -comment: "Les couleurs de la charte graphique AVS sont correctement implémentées dans l'application. Le bleu AVS (#34495E) est utilisé pour les éléments principaux comme le header, les titres et les étapes actives. Le vert AVS (#25b09d) est utilisé pour les accents et éléments secondaires comme le badge 'IA ACTIVÉE' et le texte 'Planning Tournées'. Les couleurs sont définies dans les variables CSS et dans le fichier tailwind.config.js, ce qui assure une cohérence dans toute l'interface."
+        
+  - task: "Légende Enrichie avec Heures de Travail"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/CalendarView.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "testing"
+        -comment: "L'analyse du code source montre que l'implémentation de la légende enrichie est correcte. La légende affiche un titre dynamique qui change selon la période sélectionnée (jour/semaine/mois/période/total), et pour chaque intervenant, elle affiche le nom, les heures travaillées au format approprié (Xh, Xmin, ou XhYmin) et le nombre d'interventions. Le format d'affichage suit bien le modèle 'Jean Dupont • 7h30 • 3 interventions'. Les calculs des heures par période sont correctement implémentés avec la fonction getLegendData() qui filtre les événements selon la période sélectionnée et calcule les heures totales pour chaque intervenant. Je n'ai pas pu tester cette fonctionnalité en conditions réelles car j'ai rencontré des problèmes avec l'upload des fichiers CSV et la génération du planning."
 
 metadata:
   created_by: "testing_agent"
