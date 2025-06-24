@@ -383,6 +383,7 @@ const CalendarView = ({ planningData, stats }) => {
               slotMaxTime="22:00:00"
               allDaySlot={false}
               nowIndicator={true}
+              initialDate={selectedDate}
               eventDidMount={(info) => {
                 // Ajouter une classe pour les événements non planifiables
                 if (info.event.extendedProps.nonPlanifiable) {
@@ -393,6 +394,16 @@ const CalendarView = ({ planningData, stats }) => {
               }}
               view={currentView}
               viewDidMount={(view) => setCurrentView(view.view.type)}
+              datesSet={(dateInfo) => {
+                // Synchroniser le calendrier avec la date sélectionnée
+                if (viewFilter !== 'all') {
+                  const viewDate = new Date(dateInfo.view.currentStart);
+                  const newSelectedDate = viewDate.toISOString().split('T')[0];
+                  if (newSelectedDate !== selectedDate) {
+                    setSelectedDate(newSelectedDate);
+                  }
+                }
+              }}
             />
           </div>
         </CardContent>
