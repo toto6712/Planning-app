@@ -342,7 +342,8 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                         color=assigned_color,
                         non_planifiable=event_data.get('non_planifiable', False),
                         trajet_precedent=event_data.get('trajet_precedent', '0 min'),
-                        adresse=event_data.get('adresse', ''),
+                        latitude=event_data.get('latitude', 0.0),
+                        longitude=event_data.get('longitude', 0.0),
                         raison=event_data.get('raison', None)
                     )
                     planning_events.append(event)
