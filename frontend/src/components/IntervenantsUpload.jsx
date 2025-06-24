@@ -163,7 +163,7 @@ const IntervenantsUpload = ({ onFileUploaded, intervenantsFile }) => {
         <div className="mt-4 p-3 bg-white/60 rounded-lg border border-green-200">
           <h4 className="font-medium text-green-900 text-sm mb-2">📋 Format attendu :</h4>
           <code className="block text-xs bg-white p-2 rounded border">
-            Nom Prenom,Adresse,Heure Mensuel,Heure Hebdomaire<br/>
+            Nom Prenom,Adresse,Heure Mensuel,Heure hebdomadaire<br/>
             Jean Dupont,12 avenue des Vosges Strasbourg,151h,35h<br/>
             Pierre Martin,8 rue du Commerce Strasbourg,169h,39h
           </code>
@@ -171,7 +171,7 @@ const IntervenantsUpload = ({ onFileUploaded, intervenantsFile }) => {
             <p>• <strong>Nom Prenom</strong> : Nom complet de l'intervenant</p>
             <p>• <strong>Adresse</strong> : Domicile de l'intervenant</p>
             <p>• <strong>Heure Mensuel</strong> : Nombre d'heures mensuelles (ex: 151h, 169h)</p>
-            <p>• <strong>Heure Hebdomaire</strong> : Nombre d'heures hebdomadaires (ex: 35h, 39h)</p>
+            <p>• <strong>Heure hebdomadaire</strong> : Nombre d'heures hebdomadaires (ex: 35h, 39h)</p>
           </div>
           <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
             <p><strong>🤖 Gestion automatique par l'IA :</strong></p>
