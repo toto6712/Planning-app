@@ -270,7 +270,7 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         df = df.dropna(how='all')
         
         # Vérifier les colonnes obligatoires (flexible)
-        required_columns = ['Nom', 'Adresse', 'Disponibilités', 'Week-end']
+        required_columns = ['Nom', 'Adresse', 'Jours_travail', 'Horaires', 'Week-end']
         available_columns = df.columns.tolist()
         
         # Mapping flexible des colonnes
