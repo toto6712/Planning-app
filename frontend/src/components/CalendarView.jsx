@@ -84,8 +84,6 @@ const CalendarView = ({ planningData, stats }) => {
         return 'total';
     }
   };
-  };
-
   // Filtrer les événements selon la vue sélectionnée
   const getFilteredEvents = () => {
     if (!planningData) return [];
