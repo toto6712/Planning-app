@@ -185,7 +185,7 @@ const CalendarView = ({ planningData, stats }) => {
       {/* Filtres et Légende */}
       {planningData && planningData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Filtres par période */}
+          {/* Filtres par période avec sélecteur de date */}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -193,12 +193,12 @@ const CalendarView = ({ planningData, stats }) => {
                 Filtrer par période
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant={viewFilter === 'all' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setViewFilter('all')}
+                  onClick={() => handleFilterChange('all')}
                   className="flex-1 min-w-[80px]"
                 >
                   Tout
@@ -206,31 +206,97 @@ const CalendarView = ({ planningData, stats }) => {
                 <Button
                   variant={viewFilter === 'day' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setViewFilter('day')}
+                  onClick={() => handleFilterChange('day')}
                   className="flex-1 min-w-[80px]"
                 >
-                  Aujourd'hui
+                  Jour
                 </Button>
                 <Button
                   variant={viewFilter === 'week' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setViewFilter('week')}
+                  onClick={() => handleFilterChange('week')}
                   className="flex-1 min-w-[80px]"
                 >
-                  Cette semaine
+                  Semaine
                 </Button>
                 <Button
                   variant={viewFilter === 'month' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setViewFilter('month')}
+                  onClick={() => handleFilterChange('month')}
                   className="flex-1 min-w-[80px]"
                 >
-                  Ce mois
+                  Mois
+                </Button>
+                <Button
+                  variant={viewFilter === 'custom' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setViewFilter('custom');
+                    setShowDatePicker(!showDatePicker);
+                  }}
+                  className="flex-1 min-w-[80px]"
+                >
+                  <CalendarRange className="h-4 w-4 mr-1" />
+                  Personnalisé
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                {filteredEvents.length} intervention(s) affichée(s)
-              </p>
+
+              {/* Sélecteur de date de référence */}
+              {(viewFilter === 'day' || viewFilter === 'week' || viewFilter === 'month') && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    {viewFilter === 'day' ? 'Date sélectionnée :' : 
+                     viewFilter === 'week' ? 'Semaine contenant le :' : 
+                     'Mois contenant le :'}
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+
+              {/* Sélecteur de plage personnalisée */}
+              {showDatePicker && viewFilter === 'custom' && (
+                <div className="space-y-3 p-3 bg-gray-50 rounded-lg border">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Date de début :</label>
+                      <input
+                        type="date"
+                        value={customDateRange.start}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Date de fin :</label>
+                      <input
+                        type="date"
+                        value={customDateRange.end}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>{filteredEvents.length} intervention(s) affichée(s)</span>
+                {viewFilter !== 'all' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleFilterChange('all')}
+                    className="text-xs h-6 px-2"
+                  >
+                    Réinitialiser
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
 
