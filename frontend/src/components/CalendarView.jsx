@@ -277,7 +277,7 @@ const CalendarView = ({ planningData, stats }) => {
                 center: 'title',
                 right: ''
               }}
-              events={planningData || []}
+              events={filteredEvents || []}
               eventClick={handleEventClick}
               dateClick={handleDateClick}
               height="100%"
