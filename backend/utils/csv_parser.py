@@ -216,8 +216,8 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
         # Supprimer les lignes complètement vides
         df = df.dropna(how='all')
         
-        # Vérifier les colonnes obligatoires (flexible sur les accents)
-        required_columns = ['Client', 'Date', 'Durée', 'Adresse']
+        # Vérifier les colonnes obligatoires (avec latitude/longitude)
+        required_columns = ['Client', 'Date', 'Durée', 'Latitude', 'Longitude']
         available_columns = df.columns.tolist()
         
         # Mapping flexible des colonnes
@@ -248,19 +248,9 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                 intervenant_col = col
                 break
         
-        # Rechercher la colonne Code Postal
-        code_postal_col = None
-        for col in available_columns:
-            col_lower = col.lower().replace(' ', '').replace('_', '').replace('-', '')
-            if any(term in col_lower for term in ['codepostal', 'cp', 'postal', 'zip']):
-                code_postal_col = col
-                break
-        
         logger.info(f"Colonnes mappées: {column_mapping}")
         if intervenant_col:
             logger.info(f"Colonne intervenant trouvée: {intervenant_col}")
-        if code_postal_col:
-            logger.info(f"Colonne code postal trouvée: {code_postal_col}")
         
         interventions = []
         for index, row in df.iterrows():
@@ -269,34 +259,34 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                 client = str(row[column_mapping['Client']]).strip()
                 date = str(row[column_mapping['Date']]).strip()
                 duree = str(row[column_mapping['Durée']]).strip()
-                adresse_base = str(row[column_mapping['Adresse']]).strip()
+                latitude = row[column_mapping['Latitude']]
+                longitude = row[column_mapping['Longitude']]
                 
                 # Ignorer les lignes avec des valeurs manquantes critiques
                 if (pd.isna(row[column_mapping['Client']]) or 
                     pd.isna(row[column_mapping['Date']]) or 
-                    pd.isna(row[column_mapping['Durée']]) or 
-                    pd.isna(row[column_mapping['Adresse']]) or
+                    pd.isna(row[column_mapping['Durée']]) or
+                    pd.isna(row[column_mapping['Latitude']]) or
+                    pd.isna(row[column_mapping['Longitude']]) or
                     client.lower() in ['nan', ''] or 
                     date.lower() in ['nan', ''] or
-                    duree.lower() in ['nan', ''] or
-                    adresse_base.lower() in ['nan', '']):
+                    duree.lower() in ['nan', '']):
                     logger.warning(f"Ligne {index + 2} ignorée : données manquantes critiques")
                     continue
                 
-                # Construire l'adresse complète
-                # Ajouter le code postal s'il existe
-                if code_postal_col and pd.notna(row.get(code_postal_col)):
-                    code_postal = str(row[code_postal_col]).strip()
-                    if code_postal and code_postal.lower() != 'nan':
-                        # Vérifier si le code postal n'est pas déjà dans l'adresse
-                        if code_postal not in adresse_base:
-                            adresse_complete = f"{adresse_base}, {code_postal}"
-                        else:
-                            adresse_complete = adresse_base
-                    else:
-                        adresse_complete = adresse_base
-                else:
-                    adresse_complete = adresse_base
+                # Valider les coordonnées
+                try:
+                    lat = float(latitude)
+                    lon = float(longitude)
+                    
+                    # Vérifier que les coordonnées sont valides
+                    if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+                        logger.warning(f"Ligne {index + 2} ignorée : coordonnées invalides ({lat}, {lon})")
+                        continue
+                        
+                except (ValueError, TypeError):
+                    logger.warning(f"Ligne {index + 2} ignorée : coordonnées non numériques")
+                    continue
                 
                 # Récupérer l'intervenant (peut être vide)
                 intervenant = ""
@@ -305,8 +295,8 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                     if intervenant.lower() == 'nan':
                         intervenant = ""
                 
-                # Détecter le secteur depuis l'adresse
-                secteur = extract_city_from_address(adresse_complete)
+                # Déterminer le secteur (optionnel, peut être dérivé des coordonnées si nécessaire)
+                secteur = ""  # Peut être ajouté plus tard via géocodage inverse si nécessaire
                 
                 # Détecter si c'est une intervention binôme (colonne optionnelle)
                 binome = False
@@ -324,12 +314,13 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                         intervenant_referent = str(row[ref_col]).strip()
                         if intervenant_referent.lower() == 'nan':
                             intervenant_referent = ""
-                
+
                 intervention = Intervention(
                     client=client,
                     date=date,
                     duree=duree,
-                    adresse=adresse_complete,
+                    latitude=lat,
+                    longitude=lon,
                     intervenant=intervenant,
                     binome=binome,
                     intervenant_referent=intervenant_referent,
@@ -337,7 +328,7 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                 )
                 interventions.append(intervention)
                 
-                logger.debug(f"Intervention créée: {intervention.client} le {intervention.date} à {adresse_complete}")
+                logger.debug(f"Intervention créée: {intervention.client} le {intervention.date} à ({lat:.4f},{lon:.4f})")
                 
             except Exception as e:
                 logger.warning(f"Erreur ligne {index + 2}: {str(e)} - Ligne ignorée")
