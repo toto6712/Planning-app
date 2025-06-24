@@ -156,6 +156,40 @@ def test_export_pdf():
         print(f"❌ Error testing export PDF: {str(e)}")
         return False
 
+def test_duplicate_detection():
+    """Test the duplicate detection in intervenants CSV"""
+    print("\n=== Testing Duplicate Detection in Intervenants CSV ===")
+    try:
+        # Check if test file exists
+        if not os.path.exists(INTERVENANTS_DUPLICATES_CSV) or not os.path.exists(INTERVENTIONS_CSV):
+            print("❌ Test CSV files not found")
+            return False
+        
+        # Open the files
+        with open(INTERVENTIONS_CSV, 'rb') as interventions_file, open(INTERVENANTS_DUPLICATES_CSV, 'rb') as intervenants_file:
+            files = {
+                'interventions_file': ('interventions.csv', interventions_file, 'text/csv'),
+                'intervenants_file': ('intervenants.csv', intervenants_file, 'text/csv')
+            }
+            
+            # Make the request
+            print("Uploading CSV files with duplicate intervenants...")
+            response = requests.post(f"{API_BASE_URL}/upload-csv", files=files)
+            print(f"Status Code: {response.status_code}")
+            
+            # We expect a 400 Bad Request with a message about duplicates
+            if response.status_code == 400 and "doublon" in response.text.lower():
+                print(f"Response: {response.text}")
+                test_results["duplicate_detection"] = True
+                print("✅ Duplicate detection test passed")
+                return True
+            else:
+                print(f"❌ Duplicate detection test failed: {response.text}")
+                return False
+    except Exception as e:
+        print(f"❌ Error testing duplicate detection: {str(e)}")
+        return False
+
 def run_all_tests():
     """Run all tests and print summary"""
     print("\n=== Starting Backend API Tests ===")
