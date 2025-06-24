@@ -68,13 +68,13 @@ const IntervenantsUpload = ({ onFileUploaded, intervenantsFile }) => {
   };
 
   return (
-    <Card className="border-2 border-dashed transition-all duration-300 hover:border-green-400 bg-gradient-to-br from-green-50 to-emerald-50">
+    <Card className="border-2 border-dashed transition-all duration-300 hover:border-avs-green bg-gradient-to-br from-green-50 to-avs-green/5">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-green-900">
-          <UserCheck className="h-5 w-5 text-green-600" />
+        <CardTitle className="flex items-center gap-2 text-avs-green">
+          <UserCheck className="h-5 w-5 text-avs-green" />
           Fichier Intervenants
         </CardTitle>
-        <CardDescription className="text-green-700">
+        <CardDescription className="text-avs-green/80">
           Chargez votre fichier intervenants.csv avec les heures contractuelles de votre équipe
         </CardDescription>
       </CardHeader>
