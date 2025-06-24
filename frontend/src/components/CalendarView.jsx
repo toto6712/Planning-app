@@ -13,8 +13,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 const CalendarView = ({ planningData, stats }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentView, setCurrentView] = useState('timeGridWeek');
-
-  const [viewFilter, setViewFilter] = useState('all'); // all, day, week, month
+  const [viewFilter, setViewFilter] = useState('all'); // all, day, week, month, custom
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [customDateRange, setCustomDateRange] = useState({
+    start: new Date().toISOString().split('T')[0],
+    end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const getLegendData = () => {
     const intervenantData = new Map();
