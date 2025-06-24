@@ -19,6 +19,7 @@ test_results = {
     "upload_csv": False,
     "export_csv": False,
     "export_pdf": False,
+    "duplicate_detection": False,
     "planning_data": None
 }
 
