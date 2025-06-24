@@ -4,6 +4,7 @@ from typing import List, Tuple
 from ..models import Intervention, Intervenant
 import logging
 import chardet
+from .csv_cleaner import clean_csv_file
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,15 @@ def detect_encoding(file_content: bytes) -> str:
         return 'utf-8'
 
 def try_multiple_encodings(file_content: bytes) -> pd.DataFrame:
-    """Essaie plusieurs encodages pour lire le fichier CSV"""
+    """Essaie plusieurs encodings et options pour lire le fichier CSV"""
+    # D'abord, essayer de nettoyer le fichier
+    try:
+        logger.info("Tentative de nettoyage du fichier CSV")
+        cleaned_content = clean_csv_file(file_content)
+    except Exception as e:
+        logger.warning(f"Échec du nettoyage: {str(e)}")
+        cleaned_content = file_content
+    
     encodings_to_try = [
         'utf-8',
         'utf-8-sig',  # UTF-8 avec BOM
@@ -30,130 +39,97 @@ def try_multiple_encodings(file_content: bytes) -> pd.DataFrame:
     ]
     
     # Ajouter l'encodage détecté en premier
-    detected_encoding = detect_encoding(file_content)
+    detected_encoding = detect_encoding(cleaned_content)
     if detected_encoding and detected_encoding not in encodings_to_try:
         encodings_to_try.insert(0, detected_encoding)
     
     # Options de lecture CSV pour gérer différents cas
-    csv_options = [
+    csv_options_list = [
         {},  # Options par défaut
         {'sep': ';'},  # Séparateur point-virgule
         {'quotechar': '"', 'quoting': 1},  # Gestion des guillemets
         {'skipinitialspace': True},  # Ignorer les espaces initiaux
-        {'on_bad_lines': 'skip'},  # Ignorer les lignes malformées
-        {'error_bad_lines': False, 'warn_bad_lines': True},  # Pour anciennes versions pandas
+        {'on_bad_lines': 'skip'},  # Ignorer les lignes malformées (pandas récent)
     ]
     
+    # Pour les versions plus anciennes de pandas
+    try:
+        import pandas as pd
+        if hasattr(pd, '__version__') and int(pd.__version__.split('.')[0]) < 1:
+            csv_options_list.append({'error_bad_lines': False, 'warn_bad_lines': True})
+    except:
+        pass
+    
     for encoding in encodings_to_try:
-        for options in csv_options:
+        for options in csv_options_list:
             try:
-                logger.info(f"Tentative de lecture avec l'encodage: {encoding} et options: {options}")
+                logger.info(f"Tentative avec encodage: {encoding}, options: {options}")
                 
-                # Essayer avec les options spécifiques
-                df = pd.read_csv(io.BytesIO(file_content), encoding=encoding, **options)
+                df = pd.read_csv(io.BytesIO(cleaned_content), encoding=encoding, **options)
                 
-                # Vérifier que le DataFrame n'est pas vide et a au moins 3 colonnes
+                # Vérifier que le DataFrame est valide
                 if not df.empty and len(df.columns) >= 3:
-                    logger.info(f"Lecture réussie avec l'encodage: {encoding} et options: {options}")
+                    logger.info(f"✅ Lecture réussie avec {encoding} et options {options}")
                     return df
                 else:
-                    logger.warning(f"DataFrame vide ou pas assez de colonnes avec {encoding}")
+                    logger.warning(f"DataFrame invalide avec {encoding}")
                     
             except Exception as e:
-                logger.warning(f"Échec avec l'encodage {encoding} et options {options}: {str(e)}")
+                logger.debug(f"Échec avec {encoding} et {options}: {str(e)}")
                 continue
     
-    # Si tous les encodages échouent, essayer de nettoyer le contenu ligne par ligne
+    # Dernière tentative avec nettoyage manuel ligne par ligne
     try:
-        logger.info("Tentative de nettoyage du contenu ligne par ligne")
-        content_str = file_content.decode('utf-8', errors='ignore')
+        logger.info("Tentative de nettoyage manuel avancé")
+        content_str = cleaned_content.decode('utf-8', errors='ignore')
         
-        # Nettoyer le contenu ligne par ligne
         lines = content_str.split('\n')
-        cleaned_lines = []
+        if not lines:
+            raise ValueError("Fichier vide")
         
-        # Garder l'en-tête
-        if lines:
-            cleaned_lines.append(lines[0])
+        # Analyser l'en-tête
+        header = lines[0].strip()
+        if not header:
+            raise ValueError("En-tête manquant")
         
-        # Nettoyer chaque ligne de données
+        expected_columns = len(header.split(','))
+        logger.info(f"En-tête: {header}, colonnes attendues: {expected_columns}")
+        
+        # Construire un CSV valide
+        valid_lines = [header]
         for i, line in enumerate(lines[1:], start=2):
             if line.strip():
-                # Compter les virgules pour détecter les problèmes
-                comma_count = line.count(',')
+                # Essayer de corriger la ligne
+                parts = line.split(',')
+                if len(parts) != expected_columns:
+                    logger.warning(f"Ligne {i}: {len(parts)} champs au lieu de {expected_columns}")
+                    # Correction simple: prendre les premières colonnes et fusionner le reste
+                    if len(parts) > expected_columns:
+                        corrected_parts = parts[:expected_columns-1]
+                        corrected_parts.append(','.join(parts[expected_columns-1:]))
+                        line = ','.join(corrected_parts)
                 
-                # Si trop de virgules, essayer de corriger
-                if comma_count > 6:  # Plus de colonnes que prévu
-                    # Essayer de détecter les virgules dans les adresses et les remplacer
-                    corrected_line = fix_csv_line(line)
-                    cleaned_lines.append(corrected_line)
-                    logger.info(f"Ligne {i} corrigée: {line} -> {corrected_line}")
-                else:
-                    cleaned_lines.append(line)
+                valid_lines.append(line.strip())
         
-        # Créer un nouveau contenu CSV nettoyé
-        cleaned_content = '\n'.join(cleaned_lines)
-        df = pd.read_csv(io.StringIO(cleaned_content))
+        # Créer le DataFrame à partir du contenu corrigé
+        corrected_content = '\n'.join(valid_lines)
+        df = pd.read_csv(io.StringIO(corrected_content))
         
         if not df.empty:
-            logger.info("Lecture réussie après nettoyage ligne par ligne")
+            logger.info("✅ Lecture réussie après correction manuelle")
             return df
             
     except Exception as e:
-        logger.error(f"Erreur lors du nettoyage: {str(e)}")
+        logger.error(f"Erreur lors du nettoyage manuel: {str(e)}")
     
-    raise ValueError("Impossible de lire le fichier avec tous les encodages et options testés. Vérifiez le format de votre fichier CSV.")
-
-def fix_csv_line(line: str) -> str:
-    """Tente de corriger une ligne CSV malformée"""
-    try:
-        # Si la ligne contient des guillemets, essayer de les équilibrer
-        if '"' in line:
-            # Compter les guillemets
-            quote_count = line.count('"')
-            if quote_count % 2 != 0:
-                # Nombre impair de guillemets, ajouter un guillemet à la fin
-                line += '"'
-        
-        # Séparer par virgules
-        parts = line.split(',')
-        
-        # Si on a plus de 6 parties (Client,Date,Durée,Adresse,CodePostal,Intervenant)
-        if len(parts) > 6:
-            # Les 3 premières parties sont probablement Client, Date, Durée
-            client = parts[0]
-            date = parts[1] 
-            duree = parts[2]
-            
-            # L'intervenant est probablement la dernière partie (peut être vide)
-            intervenant = parts[-1] if parts[-1].strip() else ""
-            
-            # Le code postal pourrait être avant-dernier s'il existe
-            code_postal = ""
-            if len(parts) > 4 and parts[-2].strip().isdigit():
-                code_postal = parts[-2]
-                # L'adresse est tout ce qui est entre durée et code postal
-                adresse_parts = parts[3:-2]
-            else:
-                # L'adresse est tout ce qui est entre durée et intervenant
-                adresse_parts = parts[3:-1]
-            
-            # Reconstituer l'adresse
-            adresse = ','.join(adresse_parts).strip()
-            
-            # Reconstituer la ligne
-            if code_postal:
-                corrected_line = f"{client},{date},{duree},{adresse},{code_postal},{intervenant}"
-            else:
-                corrected_line = f"{client},{date},{duree},{adresse},{intervenant}"
-            
-            return corrected_line
-        
-        return line
-        
-    except Exception:
-        # Si la correction échoue, retourner la ligne originale
-        return line
+    raise ValueError(
+        "❌ Impossible de lire le fichier CSV. Vérifiez que :\n"
+        "1. Le fichier est bien au format CSV\n"
+        "2. Les colonnes sont séparées par des virgules\n"
+        "3. Il n'y a pas de virgules dans les données (utilisez des guillemets si nécessaire)\n"
+        "4. Toutes les lignes ont le même nombre de colonnes\n"
+        "5. L'encodage est UTF-8"
+    )
 
 def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
     """Parse le fichier interventions.csv et retourne une liste d'Intervention"""
