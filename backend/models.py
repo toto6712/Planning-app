@@ -10,6 +10,9 @@ class Intervention(BaseModel):
     duree: str  # Format: "01:00"
     adresse: str
     intervenant: Optional[str] = ""  # Peut être vide si non imposé
+    binome: bool = False  # Si intervention nécessite 2 intervenants
+    intervenant_referent: Optional[str] = ""  # Intervenant préféré pour ce client
+    secteur: Optional[str] = ""  # Ville/secteur (détecté automatiquement)
     
 class Intervenant(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -17,6 +20,9 @@ class Intervenant(BaseModel):
     adresse: str
     heure_mensuel: str  # Format: "151h" ou "169h"
     heure_hebdomaire: str  # Format: "35h" ou "39h"
+    plage_horaire_autorisee: Optional[str] = ""  # Format: "09h00-18h00" ou vide
+    specialites: List[str] = []  # ["volant", "14h-22h_only"] pour cas spéciaux
+    roulement_weekend: Optional[str] = ""  # "A", "B" ou "exempt"
 
 class PlanningEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
