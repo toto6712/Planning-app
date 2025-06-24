@@ -285,6 +285,50 @@ def test_new_csv_format():
         print(f"❌ Error testing new CSV format: {str(e)}")
         return False
 
+def test_column_casing():
+    """Test the column casing for 'Heure hebdomadaire'"""
+    print("\n=== Testing Column Casing for 'Heure hebdomadaire' ===")
+    try:
+        # Check if test files exist
+        if not os.path.exists(INTERVENTIONS_CSV) or not os.path.exists(INTERVENANTS_NOUVEAU_FORMAT_CSV):
+            print("❌ Test CSV files not found")
+            return False
+        
+        # Open the files
+        with open(INTERVENTIONS_CSV, 'rb') as interventions_file, open(INTERVENANTS_NOUVEAU_FORMAT_CSV, 'rb') as intervenants_file:
+            files = {
+                'interventions_file': ('interventions.csv', interventions_file, 'text/csv'),
+                'intervenants_file': ('intervenants_nouveau_format.csv', intervenants_file, 'text/csv')
+            }
+            
+            # Make the request
+            print("Uploading CSV files to test column casing...")
+            response = requests.post(f"{API_BASE_URL}/upload-csv", files=files)
+            print(f"Status Code: {response.status_code}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"Success: {result.get('success')}")
+                print(f"Message: {result.get('message')}")
+                print(f"Planning Events: {len(result.get('planning', []))}")
+                
+                # Verify that the planning was generated correctly
+                planning_events = result.get('planning', [])
+                
+                # Check if all interventions were planned
+                if len(planning_events) > 0:
+                    print("✅ Column casing test passed - 'Heure hebdomadaire' is correctly recognized")
+                    return True
+                else:
+                    print("❌ Column casing test failed - No planning events generated")
+                    return False
+            else:
+                print(f"❌ Column casing test failed: {response.text}")
+                return False
+    except Exception as e:
+        print(f"❌ Error testing column casing: {str(e)}")
+        return False
+
 def run_all_tests():
     """Run all tests and print summary"""
     print("\n=== Starting Backend API Tests ===")
