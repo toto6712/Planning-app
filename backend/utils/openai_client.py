@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from typing import List, Dict, Any
-from models import Intervention, Intervenant, PlanningEvent
+from ..models import Intervention, Intervenant, PlanningEvent
 
 logger = logging.getLogger(__name__)
 
