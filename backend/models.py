@@ -8,16 +8,18 @@ class Intervention(BaseModel):
     client: str
     date: str  # Format: "29/06/2025 08:00"
     duree: str  # Format: "01:00"
-    adresse: str
+    latitude: float
+    longitude: float
     intervenant: Optional[str] = ""  # Peut être vide si non imposé
     binome: bool = False  # Si intervention nécessite 2 intervenants
     intervenant_referent: Optional[str] = ""  # Intervenant préféré pour ce client
-    secteur: Optional[str] = ""  # Ville/secteur (détecté automatiquement)
+    secteur: Optional[str] = ""  # Ville/secteur (peut être détecté depuis les coordonnées)
     
 class Intervenant(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     nom_prenom: str
-    adresse: str
+    latitude: float
+    longitude: float
     heure_mensuel: str  # Format: "151h" ou "169h"
     heure_hebdomaire: str  # Format: "35h" ou "39h"
     plage_horaire_autorisee: Optional[str] = ""  # Format: "09h00-18h00" ou vide
