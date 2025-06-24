@@ -119,15 +119,18 @@ backend:
 
   - task: "Upload CSV Endpoint"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/routes.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         -working: true
         -agent: "testing"
         -comment: "Le endpoint /api/upload-csv fonctionne correctement. Il accepte les fichiers CSV d'interventions et d'intervenants, les traite et génère un planning optimisé via l'API OpenAI. Les tests avec les fichiers CSV fournis ont réussi, et l'IA a généré un planning avec 3/3 interventions planifiées (taux de 100%)."
+        -working: false
+        -agent: "testing"
+        -comment: "Le endpoint /api/upload-csv ne fonctionne pas avec le nouveau format CSV d'intervenants. L'erreur est 'Aucun intervenant valide trouvé dans le fichier'. Le problème est dans la fonction parse_intervenants_csv qui tente d'accéder à une colonne 'Disponibilités' qui n'existe pas dans le nouveau format. La fonction doit être mise à jour pour gérer à la fois l'ancien format (avec 'Disponibilites') et le nouveau format (avec 'Jours_travail' et 'Horaires')."
 
   - task: "Export CSV Endpoint"
     implemented: true
@@ -170,11 +173,11 @@ backend:
 
   - task: "CSV Parser"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/utils/csv_parser.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
     status_history:
         -working: true
         -agent: "testing"
@@ -182,6 +185,21 @@ backend:
         -working: true
         -agent: "testing"
         -comment: "La détection des doublons d'intervenants fonctionne correctement. Les intervenants en doublon (même nom avec casse différente) sont filtrés lors du parsing, et seule la première occurrence est conservée. Les tests avec un fichier contenant des doublons ('Dupont'/'dupont' et 'Martin'/'MARTIN') ont confirmé que le système gère correctement ce cas."
+        -working: false
+        -agent: "testing"
+        -comment: "Le parser CSV ne fonctionne pas avec le nouveau format CSV d'intervenants. L'erreur est 'Aucun intervenant valide trouvé dans le fichier'. Le problème est dans la fonction parse_intervenants_csv qui tente d'accéder à une colonne 'Disponibilités' qui n'existe pas dans le nouveau format. La fonction doit être mise à jour pour gérer à la fois l'ancien format (avec 'Disponibilites') et le nouveau format (avec 'Jours_travail' et 'Horaires')."
+
+  - task: "Nouveau Format CSV Intervenants"
+    implemented: true
+    working: false
+    file: "/app/backend/utils/csv_parser.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: false
+        -agent: "testing"
+        -comment: "Le nouveau format CSV d'intervenants avec les champs améliorés (jours_travail, horaires, temps_hebdo, temps_mensuel, repos, weekend) n'est pas correctement géré par le parser CSV. L'erreur est 'Aucun intervenant valide trouvé dans le fichier'. Le problème est dans la fonction parse_intervenants_csv qui tente d'accéder à une colonne 'Disponibilités' qui n'existe pas dans le nouveau format. La fonction doit être mise à jour pour gérer à la fois l'ancien format (avec 'Disponibilites') et le nouveau format (avec 'Jours_travail' et 'Horaires')."
 
 frontend:
   - task: "Chargement Initial"
