@@ -23,14 +23,19 @@ const CalendarView = ({ planningData, stats }) => {
   };
 
   const getLegendData = () => {
-    const intervenants = new Set();
+    const intervenantData = new Map();
+    
     planningData?.forEach(event => {
-      intervenants.add(event.extendedProps.intervenant);
+      const intervenant = event.extendedProps.intervenant;
+      if (intervenant && !intervenantData.has(intervenant)) {
+        intervenantData.set(intervenant, {
+          name: intervenant,
+          color: event.backgroundColor || event.borderColor || '#64748b'
+        });
+      }
     });
-    return Array.from(intervenants).map(intervenant => ({
-      name: intervenant,
-      color: intervenantColors[intervenant] || '#64748b'
-    }));
+    
+    return Array.from(intervenantData.values()).sort((a, b) => a.name.localeCompare(b.name));
   };
 
   const handleEventClick = (eventInfo) => {
