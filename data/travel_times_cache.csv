@@ -1,0 +1,3 @@
+adresse_depart,adresse_arrivee,temps_minutes,date_calcul
+# Exemple de trajets pré-calculés - vous pouvez ajouter vos propres trajets ici
+# Format: adresse_depart,adresse_arrivee,temps_minutes,date_calcul
