@@ -41,27 +41,43 @@ const CalendarView = ({ planningData, stats }) => {
   const getFilteredEvents = () => {
     if (!planningData) return [];
     
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay() + 1); // Lundi
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6); // Dimanche
+    const referenceDate = new Date(selectedDate);
+    const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
     
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    // Calculer début et fin de semaine
+    const weekStart = new Date(today);
+    const dayOfWeek = weekStart.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Lundi = 1
+    weekStart.setDate(weekStart.getDate() + diffToMonday);
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+    
+    // Calculer début et fin de mois
+    const monthStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+    monthStart.setHours(0, 0, 0, 0);
+    const monthEnd = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0);
+    monthEnd.setHours(23, 59, 59, 999);
 
     return planningData.filter(event => {
       const eventDate = new Date(event.start);
-      const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
       
       switch (viewFilter) {
         case 'day':
+          const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
           return eventDay.getTime() === today.getTime();
         case 'week':
           return eventDate >= weekStart && eventDate <= weekEnd;
         case 'month':
           return eventDate >= monthStart && eventDate <= monthEnd;
+        case 'custom':
+          const customStart = new Date(customDateRange.start);
+          customStart.setHours(0, 0, 0, 0);
+          const customEnd = new Date(customDateRange.end);
+          customEnd.setHours(23, 59, 59, 999);
+          return eventDate >= customStart && eventDate <= customEnd;
         default:
           return true;
       }
