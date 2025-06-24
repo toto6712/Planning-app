@@ -226,17 +226,22 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
             found = False
             for avail_col in available_columns:
                 # Comparaison flexible (sans accents et casse)
-                if (req_col.lower().replace('é', 'e').replace('è', 'e') == 
-                    avail_col.lower().replace('é', 'e').replace('è', 'e')):
+                req_normalized = req_col.lower().replace('é', 'e').replace('è', 'e').replace('à', 'a').replace('ç', 'c')
+                avail_normalized = avail_col.lower().replace('é', 'e').replace('è', 'e').replace('à', 'a').replace('ç', 'c').replace('ã©', 'e').replace('ã¨', 'e')
+                
+                if req_normalized == avail_normalized:
                     column_mapping[req_col] = avail_col
                     found = True
+                    logger.info(f"Mapping flexible: {req_col} -> {avail_col}")
                     break
+                    
             if not found:
                 # Recherche partielle
                 for avail_col in available_columns:
-                    if req_col.lower().replace('é', 'e') in avail_col.lower().replace('é', 'e'):
+                    if req_col.lower().replace('é', 'e') in avail_col.lower().replace('é', 'e').replace('ã©', 'e'):
                         column_mapping[req_col] = avail_col
                         found = True
+                        logger.info(f"Mapping partiel: {req_col} -> {avail_col}")
                         break
             if not found:
                 raise ValueError(f"Colonne manquante dans interventions.csv: '{req_col}'. Colonnes disponibles: {available_columns}")
