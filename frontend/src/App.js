@@ -133,7 +133,7 @@ function App() {
                     </div>
                     {index < steps.length - 1 && (
                       <div className={`w-16 lg:w-32 h-0.5 mx-4 transition-all duration-500 ${
-                        currentStep > step.id ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-gray-200'
+                        currentStep > step.id ? 'bg-gradient-to-r from-avs-blue to-avs-green' : 'bg-gray-200'
                       }`} />
                     )}
                   </div>
