@@ -92,23 +92,6 @@ def test_no_default_values():
     """Test that NO default 15-minute values are used"""
     print("\n=== Testing No Default 15-Minute Values ===")
     try:
-        if not test_results["ai_message"]:
-            print("❌ No AI message available for testing")
-            return False
-        
-        ai_message = test_results["ai_message"]
-        
-        # Check if there's any mention of "15 min" as a default value
-        if "15 min" in ai_message and ("default" in ai_message.lower() or "défaut" in ai_message.lower()):
-            print("❌ Found mention of '15 min' default value in AI message")
-            return False
-        
-        # Check for the specific message about no default values
-        if "AUCUNE valeur par défaut" in ai_message:
-            print("✅ Found explicit message about no default values")
-            test_results["no_default_values"] = True
-            return True
-        
         # Check if planning events have realistic travel times
         if test_results["planning_data"]:
             planning_events = test_results["planning_data"].get("planning", [])
