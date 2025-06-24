@@ -8,25 +8,23 @@ CONTRAINTES OBLIGATOIRES :
 - Max 13h/jour, min 11h repos entre journées
 - Max 6 jours consécutifs + 1 repos/semaine obligatoire
 - Week-end alterné A/B selon intervenant
-- Temps trajet : 0.75 min/km, arrondi 5 min
 - AUCUN CHEVAUCHEMENT : Un intervenant ne peut faire qu'UNE intervention à la fois
 - AUCUN DOUBLON : Chaque intervention ne doit apparaître qu'UNE SEULE fois
 - Intervenant imposé = priorité absolue
 - Si impossible : conserver horaire, flag non_planifiable=true, couleur #ff6b6b
 
-LOGIQUE STRICTE :
-1. Traiter CHAQUE intervention UNE SEULE fois
-2. Vérifier AVANT assignation qu'un intervenant est libre
-3. Prioriser intervenants imposés
-4. Ajouter temps de trajet entre interventions consécutives
-5. Si conflit horaire : chercher autre intervenant ou marquer non_planifiable
-6. Respecter disponibilités/repos
-7. Équilibrer charges
+LOGIQUE OPTIMISATION TRAJETS :
+1. PREMIÈRE intervention de la journée : partir de l'adresse domicile de l'intervenant
+2. INTERVENTIONS SUIVANTES : partir de l'adresse de la DERNIÈRE intervention terminée
+3. Calculer temps trajet entre adresses réelles (0.75 min/km, arrondi 5 min)
+4. Ajouter ce temps de trajet à l'heure de fin de l'intervention précédente
+5. Choisir intervention suivante avec trajet le PLUS COURT depuis position actuelle
+6. Laisser minimum 15 minutes entre fin intervention et début suivante
 
 RÈGLE ANTI-CONFLIT :
 - Si Intervenant A : 08h00-09h00, il ne peut PAS avoir 08h30-09h30
-- Laisser minimum 15 minutes entre interventions pour trajet
 - Vérifier disponibilité réelle selon planning existant
+- Si conflit horaire : chercher autre intervenant ou marquer non_planifiable
 
 COULEURS PAR INTERVENANT :
 #32a852, #3b82f6, #f59e0b, #8b5cf6, #ef4444, #06b6d4, #84cc16, #f97316, #ec4899, #6366f1
@@ -41,7 +39,7 @@ Tu DOIS répondre UNIQUEMENT avec un tableau JSON valide, rien d'autre :
     "end": "YYYY-MM-DDTHH:MM", 
     "color": "#couleur_assignée",
     "non_planifiable": false,
-    "trajet_precedent": "X min",
+    "trajet_precedent": "X min depuis dernière intervention",
     "adresse": "Adresse complète"
   }
 ]
@@ -50,5 +48,6 @@ VÉRIFICATION OBLIGATOIRE :
 - Aucun intervenant en double au même horaire
 - Chaque client apparaît exactement une fois
 - Horaires logiques (fin > début)
+- Trajets calculés depuis position réelle (dernière intervention, pas domicile)
 
-RÉPONSE OBLIGATOIRE : JSON ARRAY uniquement, sans chevauchement d'horaires.
+RÉPONSE OBLIGATOIRE : JSON ARRAY uniquement, trajets optimisés depuis positions réelles.
