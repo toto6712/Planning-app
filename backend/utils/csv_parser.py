@@ -275,6 +275,8 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                 latitude = row[column_mapping['Latitude']]
                 longitude = row[column_mapping['Longitude']]
                 
+                logger.debug(f"Ligne {index + 2}: Valeurs extraites - client='{client}', date='{date}', duree='{duree}', lat='{latitude}', lon='{longitude}'")
+                
                 # Ignorer les lignes avec des valeurs manquantes critiques
                 if (pd.isna(row[column_mapping['Client']]) or 
                     pd.isna(row[column_mapping['Date']]) or 
