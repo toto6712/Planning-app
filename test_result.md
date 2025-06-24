@@ -225,6 +225,9 @@ frontend:
         -working: true
         -agent: "testing"
         -comment: "L'application se charge correctement. Le header 'Planning Tournées IA' est bien affiché, le badge 'IA ACTIVÉE' est visible, et les trois étapes de progression (Import CSV, Planning IA, Export) sont correctement affichées."
+        -working: true
+        -agent: "testing"
+        -comment: "L'application avec la nouvelle charte graphique AVS Autonomie se charge correctement. Le logo AVS Autonomie est bien affiché dans le header avec le texte 'AVS Autonomie' et 'Planning Tournées'. Le badge 'IA ACTIVÉE' utilise la couleur verte AVS (#25b09d) et est correctement affiché. Les trois étapes de progression utilisent le dégradé de couleurs AVS (bleu #34495E vers vert #25b09d) pour les étapes actives."
 
   - task: "Interface Upload CSV"
     implemented: true
@@ -240,6 +243,9 @@ frontend:
         -working: true
         -agent: "testing"
         -comment: "L'interface d'upload CSV est bien implémentée. La zone de drag & drop est clairement visible avec le message 'Glissez-déplacez vos fichiers CSV ici'. Les instructions de format CSV sont présentes avec des exemples pour interventions.csv et intervenants.csv. Le bouton 'Générer le planning IA' est correctement désactivé initialement."
+        -working: true
+        -agent: "testing"
+        -comment: "L'interface d'upload CSV avec la nouvelle charte graphique AVS est correctement implémentée. Le composant d'upload des interventions utilise la couleur bleue AVS (#34495E) pour les bordures et les textes, tandis que le composant d'upload des intervenants utilise la couleur verte AVS (#25b09d). Les zones de drag & drop sont clairement différenciées par ces couleurs, et les icônes et titres utilisent les couleurs correspondantes."
 
   - task: "Affichage Calendrier"
     implemented: true
@@ -255,6 +261,9 @@ frontend:
         -working: "NA"
         -agent: "testing"
         -comment: "Impossible de tester l'affichage du calendrier car il nécessite des données de planning qui sont générées après l'upload de fichiers CSV. Le code source montre que le composant FullCalendar est correctement configuré avec les vues Mois, Semaine et Jour, ainsi qu'une légende des intervenants avec couleurs."
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Tentative de test du calendrier avec la nouvelle charte graphique AVS, mais impossible de générer un planning complet en raison d'une erreur 400 lors de l'upload des fichiers CSV. Le code source montre que le composant FullCalendar est correctement configuré pour utiliser les couleurs AVS dans la légende des intervenants."
 
   - task: "Boutons Export"
     implemented: true
@@ -270,6 +279,9 @@ frontend:
         -working: "NA"
         -agent: "testing"
         -comment: "Impossible de tester les boutons d'export car ils nécessitent des données de planning qui sont générées après l'upload de fichiers CSV. Le code source montre que les boutons d'export PDF et CSV sont correctement implémentés et qu'ils sont désactivés lorsqu'aucune donnée n'est disponible. Le résumé du planning est également implémenté pour afficher les statistiques."
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Impossible de tester les boutons d'export avec la nouvelle charte graphique AVS en raison de l'erreur lors de la génération du planning. Le code source montre que les boutons d'export utilisent des dégradés de couleurs cohérents avec la charte graphique AVS."
 
   - task: "Responsive Design"
     implemented: true
@@ -285,6 +297,39 @@ frontend:
         -working: true
         -agent: "testing"
         -comment: "Le design responsive est bien implémenté. L'application utilise TailwindCSS avec des classes adaptatives (sm:, md:, lg:) pour s'adapter aux différentes tailles d'écran. Les animations de fade-in sont correctement définies dans le style global. Le design glassmorphism est appliqué avec backdrop-blur et les gradients sont présents dans les éléments UI."
+        -working: true
+        -agent: "testing"
+        -comment: "Le design responsive avec la nouvelle charte graphique AVS est bien implémenté. L'application s'adapte correctement aux différentes tailles d'écran (desktop, tablette, mobile). Le logo AVS Autonomie reste visible et lisible sur toutes les tailles d'écran. Les couleurs AVS (bleu #34495E et vert #25b09d) sont cohérentes sur tous les formats."
+  
+  - task: "Logo AVS Autonomie"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/AvsLogo.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Vérification de l'affichage du logo AVS Autonomie dans le header."
+        -working: true
+        -agent: "testing"
+        -comment: "Le logo AVS Autonomie est correctement implémenté et affiché dans le header. Il comprend l'icône AVS dans un carré bleu (#34495E) et le texte 'AVS Autonomie' en bleu avec 'Planning Tournées' en vert (#25b09d) en dessous. Le design est cohérent avec la charte graphique AVS."
+
+  - task: "Couleurs Charte Graphique"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/index.css"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Vérification de l'utilisation des couleurs de la charte graphique AVS dans toute l'interface."
+        -working: true
+        -agent: "testing"
+        -comment: "Les couleurs de la charte graphique AVS sont correctement implémentées dans l'application. Le bleu AVS (#34495E) est utilisé pour les éléments principaux comme le header, les titres et les étapes actives. Le vert AVS (#25b09d) est utilisé pour les accents et éléments secondaires comme le badge 'IA ACTIVÉE' et le texte 'Planning Tournées'. Les couleurs sont définies dans les variables CSS et dans le fichier tailwind.config.js, ce qui assure une cohérence dans toute l'interface."
 
 metadata:
   created_by: "testing_agent"
