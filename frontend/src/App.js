@@ -69,7 +69,7 @@ function App() {
             </div>
             <Badge variant="secondary" className="bg-green-100 text-green-800 px-3 py-1">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              DÉMO AVEC MOCK DATA
+              IA ACTIVÉE
             </Badge>
           </div>
         </div>
@@ -142,10 +142,10 @@ function App() {
         <footer className="mt-16 py-8 border-t border-gray-200 bg-white/50 backdrop-blur-sm rounded-lg">
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
-              🤖 <strong>Application de démonstration</strong> - Utilise des données mock pour la présentation
+              🤖 <strong>Planification optimisée par OpenAI</strong> - Respect automatique de toutes les contraintes métier
             </p>
             <p className="text-xs text-gray-500">
-              L'IA ChatGPT optimisera automatiquement vos vraies données selon les contraintes métier
+              L'IA analyse vos données et génère le planning optimal en temps réel
             </p>
             <div className="flex justify-center gap-4 mt-4 text-xs text-gray-500">
               <span>✅ Respect des horaires 07h-22h</span>
