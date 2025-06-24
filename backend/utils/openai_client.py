@@ -222,7 +222,7 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                 try:
                     # Assigner un intervenant de base
                     intervenant_assigned = intervention.intervenant if intervention.intervenant else (
-                        intervenants[i % len(intervenants)].nom if intervenants else "Non assigné"
+                        intervenants[i % len(intervenants)].nom_prenom if intervenants else "Non assigné"
                     )
                     
                     # Calculer l'heure de fin (ajouter la durée à l'heure de début)
