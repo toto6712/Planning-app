@@ -179,6 +179,9 @@ backend:
         -working: true
         -agent: "testing"
         -comment: "Le parser CSV fonctionne correctement. Il valide les colonnes requises, gère les intervenants imposés et vérifie les formats de date. Les tests avec les fichiers CSV fournis ont réussi."
+        -working: true
+        -agent: "testing"
+        -comment: "La détection des doublons d'intervenants fonctionne correctement. Les intervenants en doublon (même nom avec casse différente) sont filtrés lors du parsing, et seule la première occurrence est conservée. Les tests avec un fichier contenant des doublons ('Dupont'/'dupont' et 'Martin'/'MARTIN') ont confirmé que le système gère correctement ce cas."
 
 frontend:
   - task: "Chargement Initial"
