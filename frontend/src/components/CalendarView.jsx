@@ -84,6 +84,71 @@ const CalendarView = ({ planningData, stats }) => {
         return 'total';
     }
   };
+
+  const createTravelTimeEvents = (events) => {
+    if (!events || events.length === 0) return [];
+    
+    const travelEvents = [];
+    
+    // Grouper les événements par intervenant
+    const eventsByIntervenant = {};
+    events.forEach(event => {
+      const intervenant = event.extendedProps?.intervenant || event.intervenant;
+      if (intervenant && !event.extendedProps?.isTravel) {
+        if (!eventsByIntervenant[intervenant]) {
+          eventsByIntervenant[intervenant] = [];
+        }
+        eventsByIntervenant[intervenant].push(event);
+      }
+    });
+
+    // Créer les événements de trajet entre interventions consécutives
+    Object.keys(eventsByIntervenant).forEach(intervenant => {
+      const interventions = eventsByIntervenant[intervenant]
+        .sort((a, b) => new Date(a.start) - new Date(b.start));
+      
+      for (let i = 0; i < interventions.length - 1; i++) {
+        const currentEvent = interventions[i];
+        const nextEvent = interventions[i + 1];
+        
+        const currentEnd = new Date(currentEvent.end);
+        const nextStart = new Date(nextEvent.start);
+        
+        // Créer un événement de trajet si il y a du temps entre les interventions
+        if (nextStart > currentEnd) {
+          const travelTime = currentEvent.extendedProps?.trajet_vers_suivant || 
+                            nextEvent.extendedProps?.trajet_precedent || "15 min";
+          
+          travelEvents.push({
+            id: `travel-${currentEvent.id}-${nextEvent.id}`,
+            title: `🚗 Trajet ${travelTime}`,
+            start: currentEnd.toISOString(),
+            end: nextStart.toISOString(),
+            backgroundColor: '#00ff88',
+            borderColor: '#00cc6a',
+            textColor: '#000',
+            extendedProps: {
+              isTravel: true,
+              intervenant: intervenant,
+              travelTime: travelTime,
+              fromAddress: currentEvent.extendedProps?.adresse || '',
+              toAddress: nextEvent.extendedProps?.adresse || ''
+            },
+            display: 'block',
+            classNames: ['travel-event']
+          });
+        }
+      }
+    });
+
+    return travelEvents;
+  };
+
+  const getAllEvents = () => {
+    const regularEvents = filteredEvents || [];
+    const travelEvents = createTravelTimeEvents(regularEvents);
+    return [...regularEvents, ...travelEvents];
+  };
   // Filtrer les événements selon la vue sélectionnée
   const getFilteredEvents = () => {
     if (!planningData) return [];
