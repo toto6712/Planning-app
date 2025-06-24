@@ -24,17 +24,66 @@ const CalendarView = ({ planningData, stats }) => {
   const getLegendData = () => {
     const intervenantData = new Map();
     
-    planningData?.forEach(event => {
-      const intervenant = event.extendedProps.intervenant;
-      if (intervenant && !intervenantData.has(intervenant)) {
-        intervenantData.set(intervenant, {
-          name: intervenant,
-          color: event.backgroundColor || event.borderColor || '#64748b'
-        });
+    // Utiliser les événements filtrés pour calculer les heures selon la période affichée
+    const eventsToProcess = filteredEvents || planningData || [];
+    
+    eventsToProcess.forEach(event => {
+      const intervenant = event.extendedProps?.intervenant || event.intervenant;
+      if (intervenant) {
+        if (!intervenantData.has(intervenant)) {
+          intervenantData.set(intervenant, {
+            name: intervenant,
+            color: event.backgroundColor || event.borderColor || '#64748b',
+            totalMinutes: 0,
+            interventionsCount: 0
+          });
+        }
+        
+        // Calculer la durée de l'intervention
+        const startTime = new Date(event.start);
+        const endTime = new Date(event.end);
+        const durationMinutes = (endTime - startTime) / (1000 * 60);
+        
+        const data = intervenantData.get(intervenant);
+        data.totalMinutes += durationMinutes;
+        data.interventionsCount += 1;
+        intervenantData.set(intervenant, data);
       }
     });
-    
-    return Array.from(intervenantData.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+    // Convertir en array et ajouter les heures formatées
+    return Array.from(intervenantData.values()).map(data => ({
+      ...data,
+      formattedHours: formatMinutesToHours(data.totalMinutes)
+    }));
+  };
+
+  const formatMinutesToHours = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    if (hours === 0) {
+      return `${mins}min`;
+    } else if (mins === 0) {
+      return `${hours}h`;
+    } else {
+      return `${hours}h${mins}`;
+    }
+  };
+
+  const getPeriodLabel = () => {
+    switch (viewFilter) {
+      case 'day':
+        return 'jour';
+      case 'week':
+        return 'semaine';
+      case 'month':
+        return 'mois';
+      case 'custom':
+        return 'période';
+      default:
+        return 'total';
+    }
+  };
   };
 
   // Filtrer les événements selon la vue sélectionnée
