@@ -68,13 +68,13 @@ const InterventionsUpload = ({ onFileUploaded, interventionsFile }) => {
   };
 
   return (
-    <Card className="border-2 border-dashed transition-all duration-300 hover:border-blue-400 bg-gradient-to-br from-blue-50 to-indigo-50">
+    <Card className="border-2 border-dashed transition-all duration-300 hover:border-avs-blue bg-gradient-to-br from-blue-50 to-avs-blue/5">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-blue-900">
-          <Users className="h-5 w-5 text-blue-600" />
+        <CardTitle className="flex items-center gap-2 text-avs-blue">
+          <Users className="h-5 w-5 text-avs-blue" />
           Fichier Interventions
         </CardTitle>
-        <CardDescription className="text-blue-700">
+        <CardDescription className="text-avs-blue/80">
           Chargez votre fichier interventions.csv contenant la liste des clients et visites à planifier
         </CardDescription>
       </CardHeader>
