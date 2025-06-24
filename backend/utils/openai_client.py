@@ -406,12 +406,18 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                     # Calculer le temps de trajet pour ce fallback
                     trajet_temps = "0 min"
                     if i > 0 and len(fallback_planning) > 0:
-                        # Prendre l'adresse de la dernière intervention
-                        prev_address = fallback_planning[-1]["adresse"]
-                        current_address = intervention.adresse
+                        # Prendre les coordonnées de la dernière intervention
+                        prev_lat = fallback_planning[-1]["latitude"]
+                        prev_lon = fallback_planning[-1]["longitude"]
+                        current_lat = intervention.latitude
+                        current_lon = intervention.longitude
                         
-                        if prev_address in travel_times and current_address in travel_times[prev_address]:
-                            trajet_minutes = travel_times[prev_address][current_address]
+                        # Chercher dans le cache des temps de trajet
+                        prev_key = f"{prev_lat:.6f},{prev_lon:.6f}"
+                        current_key = f"{current_lat:.6f},{current_lon:.6f}"
+                        
+                        if prev_key in travel_times and current_key in travel_times[prev_key]:
+                            trajet_minutes = travel_times[prev_key][current_key]
                             trajet_temps = f"{trajet_minutes} min"
                     
                     fallback_event = {
@@ -422,7 +428,8 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                         "color": colors[i % len(colors)],
                         "non_planifiable": False,
                         "trajet_precedent": trajet_temps,
-                        "adresse": intervention.adresse
+                        "latitude": intervention.latitude,
+                        "longitude": intervention.longitude
                     }
                     
                     fallback_planning.append(fallback_event)
