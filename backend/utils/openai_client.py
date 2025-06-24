@@ -29,6 +29,20 @@ class OpenAIClient:
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
         """Génère un planning optimisé via OpenAI"""
         try:
+            # Générer la palette de couleurs pour les intervenants
+            color_palette = [
+                "#32a852", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", 
+                "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6366f1", 
+                "#10b981", "#f59e0b", "#64748b", "#9333ea", "#dc2626"
+            ]
+            
+            # Créer un mapping couleur pour chaque intervenant
+            intervenant_colors = {}
+            for i, intervenant in enumerate(intervenants):
+                intervenant_colors[intervenant.nom] = color_palette[i % len(color_palette)]
+            
+            logger.info(f"Couleurs assignées aux intervenants: {intervenant_colors}")
+            
             # Préparer les données en format compact pour l'IA
             interventions_data = []
             for i in interventions:
@@ -44,37 +58,40 @@ class OpenAIClient:
                 interventions_data.append(data)
             
             intervenants_data = []
-            for i in intervenants:
+            for i, intervenant in enumerate(intervenants):
                 data = {
-                    "nom": i.nom,
-                    "adresse": i.adresse,
-                    "disponibilites": i.disponibilites,
-                    "weekend": i.weekend
+                    "nom": intervenant.nom,
+                    "adresse": intervenant.adresse,
+                    "disponibilites": intervenant.disponibilites,
+                    "weekend": intervenant.weekend,
+                    "couleur_assignee": intervenant_colors[intervenant.nom]
                 }
                 # N'ajouter le repos que s'il existe
-                if i.repos:
-                    data["repos"] = i.repos
+                if intervenant.repos:
+                    data["repos"] = intervenant.repos
                 intervenants_data.append(data)
             
             # Construire un message utilisateur compact
-            user_message = f"""INTERVENTIONS:
+            user_message = f"""INTERVENTIONS ({len(interventions_data)} total):
 {json.dumps(interventions_data, ensure_ascii=False)}
 
-INTERVENANTS:
-{json.dumps(intervenants_data, ensure_ascii=False)}"""
+INTERVENANTS ({len(intervenants_data)} total):
+{json.dumps(intervenants_data, ensure_ascii=False)}
+
+TRAITER TOUTES LES {len(interventions_data)} INTERVENTIONS."""
             
-            logger.info("Envoi de la requête à OpenAI...")
+            logger.info(f"Envoi de {len(interventions_data)} interventions et {len(intervenants_data)} intervenants à OpenAI...")
             logger.info(f"Taille du message: ~{len(user_message)} caractères")
             
-            # Utiliser GPT-4o-mini qui a des limites plus élevées et coûte moins cher
+            # Utiliser GPT-4o-mini qui a des limites plus élevées
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # Changement de modèle
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": user_message}
                 ],
                 temperature=0.1,  # Très faible pour cohérence
-                max_tokens=3000   # Limiter la réponse
+                max_tokens=4000   # Augmenter pour plus d'interventions
             )
             
             # Extraire la réponse
@@ -89,7 +106,6 @@ INTERVENANTS:
                 logger.error(f"Contenu reçu: {planning_json}")
                 # Essayer de nettoyer la réponse si elle contient du texte en plus
                 if "```json" in planning_json:
-                    # Extraire le JSON entre les balises
                     start = planning_json.find("[")
                     end = planning_json.rfind("]") + 1
                     if start >= 0 and end > start:
@@ -100,16 +116,28 @@ INTERVENANTS:
                 else:
                     raise ValueError(f"Réponse OpenAI invalide: {str(e)}")
             
+            # Vérifier que toutes les interventions ont été traitées
+            if len(planning_data) != len(interventions_data):
+                logger.warning(f"⚠️ Nombre d'interventions différent: attendu {len(interventions_data)}, reçu {len(planning_data)}")
+            
             # Convertir en objets PlanningEvent
             planning_events = []
             for event_data in planning_data:
                 try:
+                    # Vérifier/corriger la couleur selon l'intervenant
+                    intervenant_name = event_data.get('intervenant', '')
+                    assigned_color = event_data.get('color', '#64748b')
+                    
+                    # Si l'intervenant a une couleur assignée, l'utiliser
+                    if intervenant_name in intervenant_colors:
+                        assigned_color = intervenant_colors[intervenant_name]
+                    
                     event = PlanningEvent(
                         client=event_data.get('client', ''),
-                        intervenant=event_data.get('intervenant', ''),
+                        intervenant=intervenant_name,
                         start=event_data.get('start', ''),
                         end=event_data.get('end', ''),
-                        color=event_data.get('color', '#64748b'),
+                        color=assigned_color,
                         non_planifiable=event_data.get('non_planifiable', False),
                         trajet_precedent=event_data.get('trajet_precedent', '0 min'),
                         adresse=event_data.get('adresse', ''),
@@ -120,7 +148,18 @@ INTERVENANTS:
                     logger.error(f"Erreur création PlanningEvent: {str(e)}")
                     continue
             
-            logger.info(f"Planning généré avec {len(planning_events)} événements")
+            logger.info(f"✅ Planning généré avec {len(planning_events)} événements sur {len(interventions_data)} interventions")
+            
+            # Vérifier la cohérence des couleurs
+            colors_used = {}
+            for event in planning_events:
+                if event.intervenant not in colors_used:
+                    colors_used[event.intervenant] = event.color
+                elif colors_used[event.intervenant] != event.color:
+                    logger.warning(f"Couleur incohérente pour {event.intervenant}")
+            
+            logger.info(f"Couleurs utilisées: {colors_used}")
+            
             return planning_events
             
         except openai.APIError as e:
