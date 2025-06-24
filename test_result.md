@@ -176,11 +176,11 @@ backend:
 
   - task: "CSV Parser"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/utils/csv_parser.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         -working: true
         -agent: "testing"
@@ -191,6 +191,9 @@ backend:
         -working: false
         -agent: "testing"
         -comment: "Le parser CSV ne fonctionne pas avec le nouveau format CSV d'intervenants. L'erreur est 'Aucun intervenant valide trouvé dans le fichier'. Le problème est dans la fonction parse_intervenants_csv qui tente d'accéder à une colonne 'Disponibilités' qui n'existe pas dans le nouveau format. La fonction doit être mise à jour pour gérer à la fois l'ancien format (avec 'Disponibilites') et le nouveau format (avec 'Jours_travail' et 'Horaires')."
+        -working: true
+        -agent: "testing"
+        -comment: "Le parser CSV fonctionne maintenant correctement avec le nouveau format CSV simplifié pour les intervenants. La fonction validate_csv_data a été mise à jour pour utiliser nom_prenom au lieu de nom. Les tests avec le nouveau format CSV ont réussi, et le parser détecte correctement les doublons d'intervenants."
 
   - task: "Nouveau Format CSV Intervenants"
     implemented: true
