@@ -375,16 +375,15 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                         repos = ""
                 
                 intervenant = Intervenant(
-                    nom=nom,
+                    nom_prenom=nom,
                     adresse=adresse,
-                    temps_hebdo=temps_hebdo,
-                    temps_mensuel=temps_mensuel,
-                    repos=repos
+                    heure_hebdomaire=temps_hebdo,
+                    heure_mensuel=temps_mensuel
                 )
                 intervenants.append(intervenant)
                 noms_vus.add(nom_lower)
                 
-                logger.debug(f"Intervenant créé: {intervenant.nom}")
+                logger.debug(f"Intervenant créé: {intervenant.nom_prenom}")
                 
             except Exception as e:
                 logger.warning(f"Erreur ligne {index + 2}: {str(e)} - Ligne ignorée")
