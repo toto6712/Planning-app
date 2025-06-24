@@ -273,16 +273,26 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         required_columns = ['Nom', 'Adresse', 'Jours_travail', 'Horaires', 'Week-end']
         available_columns = df.columns.tolist()
         
+        logger.info(f"Colonnes requises: {required_columns}")
+        logger.info(f"Colonnes disponibles: {available_columns}")
+        
         # Mapping flexible des colonnes
         column_mapping = {}
         for req_col in required_columns:
             found = False
             for avail_col in available_columns:
+                # Comparaison directe d'abord
+                if req_col == avail_col:
+                    column_mapping[req_col] = avail_col
+                    found = True
+                    logger.info(f"Mapping direct: {req_col} -> {avail_col}")
+                    break
                 # Comparaison flexible
-                if (req_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '') == 
+                elif (req_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '') == 
                     avail_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '').replace(' ', '')):
                     column_mapping[req_col] = avail_col
                     found = True
+                    logger.info(f"Mapping flexible: {req_col} -> {avail_col}")
                     break
             if not found:
                 # Recherche partielle pour compatibilité
@@ -294,12 +304,15 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     if req_lower == 'jourstravail' and ('disponibilite' in avail_lower or 'jours' in avail_lower):
                         column_mapping[req_col] = avail_col
                         found = True
+                        logger.info(f"Mapping compatible jours: {req_col} -> {avail_col}")
                         break
                     elif req_lower in avail_lower:
                         column_mapping[req_col] = avail_col
                         found = True
+                        logger.info(f"Mapping partiel: {req_col} -> {avail_col}")
                         break
             if not found:
+                logger.error(f"Colonne '{req_col}' non trouvée parmi {available_columns}")
                 raise ValueError(f"Colonne manquante dans intervenants.csv: '{req_col}'. Colonnes disponibles: {available_columns}")
         
         # Ajouter les colonnes optionnelles
