@@ -346,8 +346,10 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     logger.warning(f"Ligne {index + 2} ignorée : intervenant '{nom}' déjà présent (doublon détecté)")
                     continue
                 
-                # Récupérer les repos (peut être vide)
+                # Récupérer les champs obligatoires et optionnels
                 repos = ""
+                temps_hebdo = ""
+                temps_mensuel = ""
                 jours_travail = str(row[column_mapping['Jours_travail']]).strip()
                 horaires = str(row[column_mapping['Horaires']]).strip()
                 
