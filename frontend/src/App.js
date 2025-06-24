@@ -32,6 +32,14 @@ function App() {
     setCurrentStep(3);
   };
 
+  const handleReset = () => {
+    setInterventionsFile(null);
+    setIntervenantsFile(null);
+    setPlanningData(null);
+    setStats(null);
+    setCurrentStep(1);
+  };
+
   const steps = [
     { 
       id: 1, 
