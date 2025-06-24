@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 
 # Configuration
-BACKEND_URL = "https://c3605f22-338c-4fa3-8d12-de026a805ea5.preview.emergentagent.com"
+BACKEND_URL = "https://7524bfef-eb18-4e95-8c5b-b17dcfe9ab70.preview.emergentagent.com"
 API_BASE_URL = f"{BACKEND_URL}/api"
 
 # Test files
