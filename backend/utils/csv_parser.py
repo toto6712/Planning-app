@@ -472,8 +472,12 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                 
                 # Valider les coordonnées
                 try:
-                    lat = float(latitude)
-                    lon = float(longitude)
+                    # Gérer les virgules françaises comme séparateurs décimaux
+                    lat_str = str(latitude).replace(',', '.')
+                    lon_str = str(longitude).replace(',', '.')
+                    
+                    lat = float(lat_str)
+                    lon = float(lon_str)
                     
                     logger.info(f"Ligne {index + 2}: Coordonnées validées - lat={lat}, lon={lon}")
                     
