@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class GeocodingService:
     def __init__(self):
-        self.geolocator = Nominatim(user_agent="planning-tournees-app")
+        self.geolocator = Nominatim(user_agent="planning-tournees-app", timeout=5)  # Réduire le timeout à 5 secondes
         self.cache = {}  # Cache simple pour éviter les appels répétés
     
     async def geocode_address(self, address: str) -> Optional[Tuple[float, float]]:
@@ -20,10 +20,10 @@ class GeocodingService:
                 return self.cache[address]
             
             # Ajouter un délai pour respecter les limites de l'API
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)  # Réduit de 1s à 0.5s
             
             # Géocoder l'adresse
-            location = self.geolocator.geocode(address, timeout=10)
+            location = self.geolocator.geocode(address, timeout=5)  # Réduit de 10s à 5s
             if location:
                 coords = (location.latitude, location.longitude)
                 self.cache[address] = coords
