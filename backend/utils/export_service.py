@@ -144,7 +144,11 @@ class ExportService:
             pdf.cell(0, 10, f'Genere le {datetime.now().strftime("%d/%m/%Y a %H:%M")} par Planning Tournees IA', 0, 1, 'C')
             
             # Retourner le PDF en bytes
-            pdf_bytes = pdf.output(dest='S').encode('latin-1')
+            pdf_content = pdf.output(dest='S')
+            if isinstance(pdf_content, str):
+                pdf_bytes = pdf_content.encode('latin-1')
+            else:
+                pdf_bytes = pdf_content
             logger.info(f"PDF généré avec {len(planning_events)} événements")
             return pdf_bytes
             
