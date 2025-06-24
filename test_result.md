@@ -261,3 +261,5 @@ test_plan:
 agent_communication:
     -agent: "testing"
     -message: "J'ai testé tous les endpoints du backend et corrigé un problème dans l'export PDF. Tous les tests passent maintenant avec succès. L'API OpenAI est correctement intégrée et génère un planning optimisé. Les fichiers CSV sont correctement traités et les exports fonctionnent comme prévu."
+    -agent: "testing"
+    -message: "Je vais maintenant tester l'interface frontend de l'application de planification de tournées. Je vais vérifier le chargement initial, l'interface d'upload CSV, l'affichage du calendrier, les boutons d'export et le responsive design."
