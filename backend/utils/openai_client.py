@@ -165,31 +165,12 @@ class OpenAIClient:
             return 20  # Seule exception où on utilise une valeur fixe
 
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
-        """Génère un planning optimisé via OpenAI avec temps de trajet depuis le cache"""
+        """Génère un planning optimisé via OpenAI avec calcul automatique des trajets"""
         try:
-            logger.info("🚀 DÉBUT génération planning avec cache des trajets")
+            logger.info("🚀 DÉBUT génération planning avec calcul automatique des trajets")
             
-            # RÉCUPÉRER LES TEMPS DE TRAJET DEPUIS LE CACHE
-            travel_times, all_available, missing_routes = await self.get_travel_times_from_cache(interventions, intervenants)
-            
-            if not all_available:
-                # Créer un message d'erreur détaillé avec les trajets manquants
-                missing_list = [f"• {addr1[:50]} → {addr2[:50]}" for addr1, addr2 in list(missing_routes)[:10]]
-                if len(missing_routes) > 10:
-                    missing_list.append(f"... et {len(missing_routes) - 10} autres trajets")
-                
-                missing_summary = "\n".join(missing_list)
-                
-                error_message = f"""❌ TRAJETS MANQUANTS dans le cache ({len(missing_routes)} trajets):
-
-{missing_summary}
-
-📋 Un fichier template a été créé: /app/data/trajets_manquants.csv
-👉 Complétez ce fichier avec les temps de trajet manquants et importez-le.
-
-💡 Vous pouvez aussi utiliser l'endpoint /api/import-travel-times pour importer les trajets."""
-                
-                raise ValueError(error_message)
+            # RÉCUPÉRER LES TEMPS DE TRAJET AVEC CALCUL AUTOMATIQUE
+            travel_times = await self.get_travel_times_with_cache(interventions, intervenants)
             
             # Générer la palette de couleurs pour les intervenants
             color_palette = [
