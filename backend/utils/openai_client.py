@@ -232,11 +232,11 @@ class OpenAIClient:
 INTERVENANTS ({len(intervenants_data)} total):
 {json.dumps(intervenants_data, ensure_ascii=False)}
 
-TEMPS DE TRAJET CALCULÉS (OpenStreetMap - en minutes):
+TEMPS DE TRAJET CALCULÉS (OSRM - en minutes) - Format: "latitude,longitude" -> temps:
 {json.dumps(travel_times, ensure_ascii=False)}
 
 RÈGLES CRITIQUES:
-- UTILISER les temps de trajet réels fournis ci-dessus
+- UTILISER les temps de trajet réels fournis ci-dessus (format latitude,longitude)
 - AUCUN intervenant ne peut être à 2 endroits en même temps
 - VÉRIFIER les horaires avant assignation
 - Temps entre interventions = temps de trajet réel + 5 min minimum
