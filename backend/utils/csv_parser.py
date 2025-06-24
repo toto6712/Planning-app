@@ -302,10 +302,14 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
             if not found:
                 raise ValueError(f"Colonne manquante dans intervenants.csv: '{req_col}'. Colonnes disponibles: {available_columns}")
         
-        # Ajouter la colonne Repos si elle existe
+        # Ajouter les colonnes optionnelles
         repos_col = None
+        temps_hebdo_col = None
+        temps_mensuel_col = None
+        
         for col in available_columns:
-            if 'repos' in col.lower():
+            col_lower = col.lower().replace(' ', '').replace('_', '')
+            if 'repos' in col_lower:
                 repos_col = col
                 break
         
