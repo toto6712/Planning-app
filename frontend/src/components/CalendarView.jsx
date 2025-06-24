@@ -237,7 +237,9 @@ const CalendarView = ({ planningData, stats }) => {
           {/* Légende des intervenants */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Légende des intervenants</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Légende des intervenants - {getPeriodLabel()}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
@@ -245,7 +247,7 @@ const CalendarView = ({ planningData, stats }) => {
                   <Badge 
                     key={index}
                     variant="secondary" 
-                    className="flex items-center gap-2 px-3 py-1 border"
+                    className="flex items-center gap-2 px-3 py-2 border"
                     style={{ 
                       backgroundColor: legend.color + '20', 
                       borderColor: legend.color,
@@ -256,7 +258,12 @@ const CalendarView = ({ planningData, stats }) => {
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: legend.color }}
                     />
-                    <span className="font-medium">{legend.name}</span>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">{legend.name}</span>
+                      <span className="text-xs opacity-75">
+                        {legend.formattedHours} • {legend.interventionsCount} intervention{legend.interventionsCount > 1 ? 's' : ''}
+                      </span>
+                    </div>
                   </Badge>
                 ))}
               </div>
