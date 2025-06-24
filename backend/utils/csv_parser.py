@@ -343,20 +343,20 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         for index, row in df.iterrows():
             try:
                 # Vérifier que les colonnes critiques ne sont pas vides
-                nom = str(row[column_mapping['Nom']]).strip()
+                nom = str(row[column_mapping['Nom_Prenom']]).strip()
                 adresse = str(row[column_mapping['Adresse']]).strip()
-                disponibilites = str(row[column_mapping['Disponibilités']]).strip()
-                weekend = str(row[column_mapping['Week-end']]).strip()
+                temps_mensuel = str(row[column_mapping['Heure_Mensuel']]).strip()
+                temps_hebdo = str(row[column_mapping['Heure_Hebdomaire']]).strip()
                 
                 # Ignorer les lignes avec des valeurs manquantes critiques
-                if (pd.isna(row[column_mapping['Nom']]) or 
+                if (pd.isna(row[column_mapping['Nom_Prenom']]) or 
                     pd.isna(row[column_mapping['Adresse']]) or 
-                    pd.isna(row[column_mapping['Disponibilités']]) or
-                    pd.isna(row[column_mapping['Week-end']]) or
+                    pd.isna(row[column_mapping['Heure_Mensuel']]) or
+                    pd.isna(row[column_mapping['Heure_Hebdomaire']]) or
                     nom.lower() in ['nan', ''] or 
                     adresse.lower() in ['nan', ''] or
-                    disponibilites.lower() in ['nan', ''] or
-                    weekend.lower() in ['nan', '']):
+                    temps_mensuel.lower() in ['nan', ''] or
+                    temps_hebdo.lower() in ['nan', '']):
                     logger.warning(f"Ligne {index + 2} ignorée : données manquantes critiques")
                     continue
                 
@@ -368,35 +368,18 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                 
                 # Récupérer les champs obligatoires et optionnels
                 repos = ""
-                temps_hebdo = ""
-                temps_mensuel = ""
-                jours_travail = str(row[column_mapping['Jours_travail']]).strip()
-                horaires = str(row[column_mapping['Horaires']]).strip()
                 
                 if repos_col and pd.notna(row.get(repos_col)):
                     repos = str(row[repos_col]).strip()
                     if repos.lower() == 'nan':
                         repos = ""
                 
-                if temps_hebdo_col and pd.notna(row.get(temps_hebdo_col)):
-                    temps_hebdo = str(row[temps_hebdo_col]).strip()
-                    if temps_hebdo.lower() == 'nan':
-                        temps_hebdo = ""
-                
-                if temps_mensuel_col and pd.notna(row.get(temps_mensuel_col)):
-                    temps_mensuel = str(row[temps_mensuel_col]).strip()
-                    if temps_mensuel.lower() == 'nan':
-                        temps_mensuel = ""
-                
                 intervenant = Intervenant(
                     nom=nom,
                     adresse=adresse,
-                    jours_travail=jours_travail,
-                    horaires=horaires,
                     temps_hebdo=temps_hebdo,
                     temps_mensuel=temps_mensuel,
-                    repos=repos,
-                    weekend=weekend
+                    repos=repos
                 )
                 intervenants.append(intervenant)
                 noms_vus.add(nom_lower)
