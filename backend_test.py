@@ -168,15 +168,15 @@ def test_duplicate_detection():
     print("\n=== Testing Duplicate Detection in Intervenants CSV ===")
     try:
         # Check if test file exists
-        if not os.path.exists(INTERVENANTS_DUPLICATES_CSV) or not os.path.exists(INTERVENTIONS_CSV):
+        if not os.path.exists(INTERVENANTS_DUPLICATES_CSV) or not os.path.exists(INTERVENTIONS_COORDONNEES_CSV):
             print("❌ Test CSV files not found")
             return False
         
         # Open the files
-        with open(INTERVENTIONS_CSV, 'rb') as interventions_file, open(INTERVENANTS_DUPLICATES_CSV, 'rb') as intervenants_file:
+        with open(INTERVENTIONS_COORDONNEES_CSV, 'rb') as interventions_file, open(INTERVENANTS_DUPLICATES_CSV, 'rb') as intervenants_file:
             files = {
-                'interventions_file': ('interventions.csv', interventions_file, 'text/csv'),
-                'intervenants_file': ('intervenants.csv', intervenants_file, 'text/csv')
+                'interventions_file': ('interventions_coordonnees.csv', interventions_file, 'text/csv'),
+                'intervenants_file': ('intervenants_duplicates.csv', intervenants_file, 'text/csv')
             }
             
             # Make the request
@@ -197,7 +197,7 @@ def test_duplicate_detection():
                 intervenants_in_planning = set(event.get('intervenant') for event in planning_events)
                 print(f"Intervenants in planning: {intervenants_in_planning}")
                 
-                # We should only have 2 unique intervenants (Dupont and Martin), not 4
+                # We should only have 2 unique intervenants (Jean Dupont and Marie Durand), not 4
                 if len(intervenants_in_planning) <= 2:
                     test_results["duplicate_detection"] = True
                     print("✅ Duplicate detection test passed - duplicates were filtered out")
