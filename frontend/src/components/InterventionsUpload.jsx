@@ -83,8 +83,8 @@ const InterventionsUpload = ({ onFileUploaded, interventionsFile }) => {
           <div
             className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-300 ${
               dragActive 
-                ? 'border-blue-500 bg-blue-100 scale-105' 
-                : 'border-blue-300 hover:border-blue-400 hover:bg-blue-50'
+                ? 'border-avs-blue bg-avs-blue/10 scale-105' 
+                : 'border-avs-blue/30 hover:border-avs-blue hover:bg-avs-blue/5'
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
