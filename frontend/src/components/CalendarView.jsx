@@ -90,21 +90,27 @@ const CalendarView = ({ planningData, stats }) => {
     
     const travelEvents = [];
     
-    // Grouper les événements par intervenant
-    const eventsByIntervenant = {};
+    // Grouper les événements par intervenant et par jour
+    const eventsByIntervenantAndDay = {};
     events.forEach(event => {
+      if (event.extendedProps?.isTravel) return; // Ignorer les événements de trajet existants
+      
       const intervenant = event.extendedProps?.intervenant || event.intervenant;
-      if (intervenant && !event.extendedProps?.isTravel) {
-        if (!eventsByIntervenant[intervenant]) {
-          eventsByIntervenant[intervenant] = [];
+      const eventDate = new Date(event.start).toDateString();
+      
+      if (intervenant) {
+        const key = `${intervenant}-${eventDate}`;
+        if (!eventsByIntervenantAndDay[key]) {
+          eventsByIntervenantAndDay[key] = [];
         }
-        eventsByIntervenant[intervenant].push(event);
+        eventsByIntervenantAndDay[key].push(event);
       }
     });
 
     // Créer les événements de trajet entre interventions consécutives
-    Object.keys(eventsByIntervenant).forEach(intervenant => {
-      const interventions = eventsByIntervenant[intervenant]
+    Object.keys(eventsByIntervenantAndDay).forEach(key => {
+      const [intervenant, dateStr] = key.split('-');
+      const interventions = eventsByIntervenantAndDay[key]
         .sort((a, b) => new Date(a.start) - new Date(b.start));
       
       for (let i = 0; i < interventions.length - 1; i++) {
@@ -114,29 +120,45 @@ const CalendarView = ({ planningData, stats }) => {
         const currentEnd = new Date(currentEvent.end);
         const nextStart = new Date(nextEvent.start);
         
-        // Créer un événement de trajet si il y a du temps entre les interventions
-        if (nextStart > currentEnd) {
-          const travelTime = currentEvent.extendedProps?.trajet_vers_suivant || 
-                            nextEvent.extendedProps?.trajet_precedent || "15 min";
+        // Créer un événement de trajet si il y a du temps entre les interventions (plus de 5 min)
+        const timeDiff = (nextStart - currentEnd) / (1000 * 60); // en minutes
+        
+        if (timeDiff > 5) {
+          // Extraire le temps de trajet depuis les données
+          let travelTime = "15 min"; // valeur par défaut
           
-          travelEvents.push({
-            id: `travel-${currentEvent.id}-${nextEvent.id}`,
-            title: `🚗 Trajet ${travelTime}`,
-            start: currentEnd.toISOString(),
-            end: nextStart.toISOString(),
-            backgroundColor: '#00ff88',
-            borderColor: '#00cc6a',
-            textColor: '#000',
-            extendedProps: {
-              isTravel: true,
-              intervenant: intervenant,
-              travelTime: travelTime,
-              fromAddress: currentEvent.extendedProps?.adresse || '',
-              toAddress: nextEvent.extendedProps?.adresse || ''
-            },
-            display: 'block',
-            classNames: ['travel-event']
-          });
+          // Essayer d'extraire depuis trajet_precedent du prochain événement
+          if (nextEvent.extendedProps?.trajet_precedent) {
+            travelTime = nextEvent.extendedProps.trajet_precedent;
+          }
+          
+          // Calculer les horaires de trajet (laissant un peu de marge)
+          const travelStartTime = new Date(currentEnd.getTime() + (2 * 60 * 1000)); // 2 min après la fin
+          const travelEndTime = new Date(nextStart.getTime() - (2 * 60 * 1000)); // 2 min avant le début
+          
+          // S'assurer que les heures sont cohérentes
+          if (travelEndTime > travelStartTime) {
+            travelEvents.push({
+              id: `travel-${currentEvent.id || i}-${nextEvent.id || i+1}`,
+              title: `🚗 ${travelTime}`,
+              start: travelStartTime.toISOString(),
+              end: travelEndTime.toISOString(),
+              backgroundColor: '#00ff88',
+              borderColor: '#00cc6a',
+              textColor: '#000',
+              classNames: ['travel-event'],
+              extendedProps: {
+                isTravel: true,
+                intervenant: intervenant,
+                travelTime: travelTime,
+                fromAddress: currentEvent.extendedProps?.adresse || currentEvent.title || '',
+                toAddress: nextEvent.extendedProps?.adresse || nextEvent.title || '',
+                fromClient: currentEvent.extendedProps?.client || currentEvent.title || '',
+                toClient: nextEvent.extendedProps?.client || nextEvent.title || ''
+              },
+              display: 'block'
+            });
+          }
         }
       }
     });
