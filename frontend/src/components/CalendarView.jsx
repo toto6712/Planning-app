@@ -148,35 +148,87 @@ const CalendarView = ({ planningData, stats }) => {
         </div>
       )}
 
-      {/* Légende des intervenants */}
+      {/* Filtres et Légende */}
       {planningData && planningData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Légende des intervenants</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {getLegendData().map((legend, index) => (
-                <Badge 
-                  key={index}
-                  variant="secondary" 
-                  className="flex items-center gap-2 px-3 py-1 border"
-                  style={{ 
-                    backgroundColor: legend.color + '20', 
-                    borderColor: legend.color,
-                    color: legend.color
-                  }}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Filtres par période */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filtrer par période
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={viewFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewFilter('all')}
+                  className="flex-1 min-w-[80px]"
                 >
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: legend.color }}
-                  />
-                  <span className="font-medium">{legend.name}</span>
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                  Tout
+                </Button>
+                <Button
+                  variant={viewFilter === 'day' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewFilter('day')}
+                  className="flex-1 min-w-[80px]"
+                >
+                  Aujourd'hui
+                </Button>
+                <Button
+                  variant={viewFilter === 'week' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewFilter('week')}
+                  className="flex-1 min-w-[80px]"
+                >
+                  Cette semaine
+                </Button>
+                <Button
+                  variant={viewFilter === 'month' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewFilter('month')}
+                  className="flex-1 min-w-[80px]"
+                >
+                  Ce mois
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                {filteredEvents.length} intervention(s) affichée(s)
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Légende des intervenants */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Légende des intervenants</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {getLegendData().map((legend, index) => (
+                  <Badge 
+                    key={index}
+                    variant="secondary" 
+                    className="flex items-center gap-2 px-3 py-1 border"
+                    style={{ 
+                      backgroundColor: legend.color + '20', 
+                      borderColor: legend.color,
+                      color: legend.color
+                    }}
+                  >
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: legend.color }}
+                    />
+                    <span className="font-medium">{legend.name}</span>
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Contrôles de vue */}
