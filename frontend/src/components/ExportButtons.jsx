@@ -3,7 +3,10 @@ import { Download, FileText, Table, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
-import { simulateExportPDF, simulateExportCSV } from '../mock';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const ExportButtons = ({ planningData, stats }) => {
   const [exportingPDF, setExportingPDF] = useState(false);
@@ -15,21 +18,52 @@ const ExportButtons = ({ planningData, stats }) => {
     setExportStatus(null);
     
     try {
-      const result = await simulateExportPDF();
+      // Convertir les données frontend au format backend
+      const backendPlanningData = planningData.map(event => ({
+        id: event.id,
+        client: event.extendedProps.client,
+        intervenant: event.extendedProps.intervenant,
+        start: event.start,
+        end: event.end,
+        color: event.backgroundColor,
+        non_planifiable: event.extendedProps.nonPlanifiable,
+        trajet_precedent: event.extendedProps.trajetPrecedent,
+        adresse: event.extendedProps.address,
+        raison: event.extendedProps.raison
+      }));
+
+      const response = await axios.post(`${API}/export-pdf`, {
+        planning: backendPlanningData,
+        stats: {
+          total_interventions: stats.totalInterventions,
+          interventions_planifiees: stats.interventionsPlanifiees,
+          interventions_non_planifiables: stats.interventionsNonPlanifiables,
+          intervenants: stats.intervenants,
+          taux_planification: stats.tauxPlanification
+        }
+      }, {
+        responseType: 'blob',
+        timeout: 30000
+      });
+
+      // Créer et télécharger le fichier PDF
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `planning_tournees_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
       setExportStatus({
         type: 'success',
-        message: `✅ ${result.message} - ${result.filename}`
+        message: '✅ Export PDF généré avec succès !'
       });
       
-      // Simulation du téléchargement
-      const element = document.createElement('a');
-      element.href = 'data:application/pdf;base64,JVBERi0xLjQKJe...'; // PDF simulé
-      element.download = result.filename;
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-      
     } catch (error) {
+      console.error('Erreur export PDF:', error);
       setExportStatus({
         type: 'error',
         message: 'Erreur lors de l\'export PDF'
@@ -44,26 +78,43 @@ const ExportButtons = ({ planningData, stats }) => {
     setExportStatus(null);
     
     try {
-      const result = await simulateExportCSV();
+      // Convertir les données frontend au format backend
+      const backendPlanningData = planningData.map(event => ({
+        id: event.id,
+        client: event.extendedProps.client,
+        intervenant: event.extendedProps.intervenant,
+        start: event.start,
+        end: event.end,
+        color: event.backgroundColor,
+        non_planifiable: event.extendedProps.nonPlanifiable,
+        trajet_precedent: event.extendedProps.trajetPrecedent,
+        adresse: event.extendedProps.address,
+        raison: event.extendedProps.raison
+      }));
+
+      const response = await axios.post(`${API}/export-csv`, backendPlanningData, {
+        responseType: 'blob',
+        timeout: 30000
+      });
+
+      // Créer et télécharger le fichier CSV
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `planning_tournees_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
       setExportStatus({
         type: 'success',
-        message: `✅ ${result.message} - ${result.filename}`
+        message: '✅ Export CSV généré avec succès !'
       });
       
-      // Création et téléchargement du CSV réel
-      const csvContent = convertToCSV(result.data);
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      
-      const element = document.createElement('a');
-      element.href = url;
-      element.download = result.filename;
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-      URL.revokeObjectURL(url);
-      
     } catch (error) {
+      console.error('Erreur export CSV:', error);
       setExportStatus({
         type: 'error',
         message: 'Erreur lors de l\'export CSV'
@@ -71,23 +122,6 @@ const ExportButtons = ({ planningData, stats }) => {
     } finally {
       setExportingCSV(false);
     }
-  };
-
-  const convertToCSV = (data) => {
-    if (!data || data.length === 0) return '';
-    
-    const headers = Object.keys(data[0]);
-    const csvRows = [headers.join(',')];
-    
-    data.forEach(row => {
-      const values = headers.map(header => {
-        const value = row[header];
-        return `"${value}"`;
-      });
-      csvRows.push(values.join(','));
-    });
-    
-    return csvRows.join('\n');
   };
 
   const isDataAvailable = planningData && planningData.length > 0;
