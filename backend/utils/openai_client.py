@@ -133,9 +133,11 @@ class OpenAIClient:
             return 20  # Seule exception où on utilise une valeur fixe
 
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
-        """Génère un planning optimisé via OpenAI avec validation des conflits"""
+        """Génère un planning optimisé via OpenAI avec temps de trajet RÉELS calculés"""
         try:
-            # Calculer les temps de trajet via OpenStreetMap
+            logger.info("🚀 DÉBUT génération planning avec calculs de trajets RÉELS")
+            
+            # CALCULER TOUS LES TEMPS DE TRAJET VIA OPENSTREETMAP
             travel_times = await self.calculate_travel_times(interventions, intervenants)
             
             # Générer la palette de couleurs pour les intervenants
