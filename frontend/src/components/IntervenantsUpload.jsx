@@ -75,7 +75,7 @@ const IntervenantsUpload = ({ onFileUploaded, intervenantsFile }) => {
           Fichier Intervenants
         </CardTitle>
         <CardDescription className="text-green-700">
-          Chargez votre fichier intervenants.csv avec les disponibilités et contraintes de votre équipe
+          Chargez votre fichier intervenants.csv avec les heures contractuelles de votre équipe
         </CardDescription>
       </CardHeader>
       <CardContent>
