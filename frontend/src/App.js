@@ -3,26 +3,38 @@ import "./App.css";
 import { Toaster } from "./components/ui/toaster";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Badge } from "./components/ui/badge";
-import { CalendarDays, Brain, Upload, Download } from "lucide-react";
-import CSVUpload from "./components/CSVUpload";
+import { CalendarDays, Brain, Upload, Download, FileText, UserCheck } from "lucide-react";
+import InterventionsUpload from "./components/InterventionsUpload";
+import IntervenantsUpload from "./components/IntervenantsUpload";
+import PlanningGenerator from "./components/PlanningGenerator";
 import CalendarView from "./components/CalendarView";
 import ExportButtons from "./components/ExportButtons";
 
 function App() {
+  const [interventionsFile, setInterventionsFile] = useState(null);
+  const [intervenantsFile, setIntervenantsFile] = useState(null);
   const [planningData, setPlanningData] = useState(null);
   const [stats, setStats] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
 
-  const handleFilesProcessed = (result) => {
+  const handleFileUploaded = (type, file) => {
+    if (type === 'interventions') {
+      setInterventionsFile(file);
+    } else if (type === 'intervenants') {
+      setIntervenantsFile(file);
+    }
+  };
+
+  const handlePlanningGenerated = (result) => {
     setPlanningData(result.planning);
     setStats(result.stats);
-    setCurrentStep(2);
+    setCurrentStep(3);
   };
 
   const steps = [
     { 
       id: 1, 
-      title: "Import CSV", 
+      title: "Upload CSV", 
       icon: Upload, 
       description: "Chargez vos fichiers interventions et intervenants" 
     },
@@ -30,15 +42,21 @@ function App() {
       id: 2, 
       title: "Planning IA", 
       icon: Brain, 
-      description: "Visualisez le planning optimisé automatiquement" 
+      description: "Générez le planning optimisé automatiquement" 
     },
     { 
       id: 3, 
-      title: "Export", 
-      icon: Download, 
-      description: "Téléchargez votre planning en PDF ou CSV" 
+      title: "Visualisation", 
+      icon: CalendarDays, 
+      description: "Visualisez et exportez votre planning" 
     }
   ];
+
+  useEffect(() => {
+    if (interventionsFile && intervenantsFile && currentStep === 1) {
+      setCurrentStep(2);
+    }
+  }, [interventionsFile, intervenantsFile, currentStep]);
 
   useEffect(() => {
     if (planningData && planningData.length > 0) {
@@ -116,23 +134,64 @@ function App() {
 
         {/* Main Content */}
         <div className="space-y-8">
-          {/* Étape 1: Upload CSV */}
+          {/* Étape 1: Upload CSV séparé */}
           {currentStep >= 1 && (
-            <div className="animate-fade-in">
-              <CSVUpload onFilesProcessed={handleFilesProcessed} />
+            <div className="animate-fade-in space-y-6">
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Étape 1 : Chargement des fichiers CSV
+                </h2>
+                <p className="text-gray-600">
+                  Chargez vos fichiers interventions et intervenants séparément
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <InterventionsUpload 
+                  onFileUploaded={handleFileUploaded}
+                  interventionsFile={interventionsFile}
+                />
+                <IntervenantsUpload 
+                  onFileUploaded={handleFileUploaded}
+                  intervenantsFile={intervenantsFile}
+                />
+              </div>
             </div>
           )}
 
-          {/* Étape 2: Affichage du planning */}
-          {currentStep >= 2 && planningData && (
+          {/* Étape 2: Génération du planning */}
+          {currentStep >= 2 && (
             <div className="animate-fade-in">
-              <CalendarView planningData={planningData} stats={stats} />
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Étape 2 : Génération du planning par IA
+                </h2>
+                <p className="text-gray-600">
+                  L'intelligence artificielle va optimiser automatiquement vos tournées
+                </p>
+              </div>
+              
+              <PlanningGenerator 
+                interventionsFile={interventionsFile}
+                intervenantsFile={intervenantsFile}
+                onPlanningGenerated={handlePlanningGenerated}
+              />
             </div>
           )}
 
-          {/* Étape 3: Export */}
+          {/* Étape 3: Affichage du planning */}
           {currentStep >= 3 && planningData && (
-            <div className="animate-fade-in">
+            <div className="animate-fade-in space-y-6">
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Étape 3 : Visualisation et export du planning
+                </h2>
+                <p className="text-gray-600">
+                  Consultez votre planning optimisé et exportez-le aux formats souhaités
+                </p>
+              </div>
+              
+              <CalendarView planningData={planningData} stats={stats} />
               <ExportButtons planningData={planningData} stats={stats} />
             </div>
           )}
