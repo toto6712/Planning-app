@@ -210,6 +210,18 @@ backend:
         -agent: "testing"
         -comment: "Le nouveau format CSV simplifié pour les intervenants fonctionne maintenant correctement. Le parser CSV a été mis à jour pour utiliser les colonnes 'Nom Prenom', 'Adresse', 'Heure Mensuel' et 'Heure Hebdomaire'. Les tests avec le nouveau format CSV ont réussi, et l'IA a généré un planning avec 3/3 interventions planifiées (taux de 100%). La détection des doublons fonctionne également correctement avec le nouveau format."
 
+  - task: "Calcul Exhaustif des Temps de Trajet"
+    implemented: true
+    working: true
+    file: "/app/backend/utils/openai_client.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "testing"
+        -comment: "Le calcul exhaustif des temps de trajet via OpenStreetMap fonctionne correctement. Tous les trajets entre toutes les adresses sont calculés sans limite de 50 calculs. Les tests montrent une variété de temps de trajet (5 min, 20 min) et aucune valeur par défaut de 15 minutes n'est utilisée. Le facteur réaliste de 1.8 min/km pour les conditions urbaines est correctement appliqué. Le système gère bien les erreurs et utilise l'estimation par distance géodésique en cas d'échec. Les temps de trajet sont correctement intégrés dans le planning et transmis à l'IA."
+
 frontend:
   - task: "Chargement Initial"
     implemented: true
