@@ -198,15 +198,18 @@ frontend:
 
   - task: "Interface Upload CSV"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/CSVUpload.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         -working: "NA"
         -agent: "testing"
         -comment: "Vérification de l'interface d'upload des fichiers CSV, instructions et bouton de génération."
+        -working: true
+        -agent: "testing"
+        -comment: "L'interface d'upload CSV est bien implémentée. La zone de drag & drop est clairement visible avec le message 'Glissez-déplacez vos fichiers CSV ici'. Les instructions de format CSV sont présentes avec des exemples pour interventions.csv et intervenants.csv. Le bouton 'Générer le planning IA' est correctement désactivé initialement."
 
   - task: "Affichage Calendrier"
     implemented: true
