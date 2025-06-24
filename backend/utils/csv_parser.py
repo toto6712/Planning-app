@@ -1,7 +1,7 @@
 import pandas as pd
 import io
 from typing import List, Tuple
-from models import Intervention, Intervenant
+from ..models import Intervention, Intervenant
 import logging
 
 logger = logging.getLogger(__name__)
