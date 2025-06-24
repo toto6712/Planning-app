@@ -4,6 +4,7 @@ import logging
 import os
 from typing import List, Dict, Any
 from ..models import Intervention, Intervenant, PlanningEvent
+from .planning_validator import planning_validator
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -25,15 +26,14 @@ class OpenAIClient:
         prompt_path = ROOT_DIR / 'ia_prompt.txt'
         with open(prompt_path, 'r', encoding='utf-8') as f:
             self.system_prompt = f.read()
-    
+
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
-        """Génère un planning optimisé via OpenAI"""
+        """Génère un planning optimisé via OpenAI avec validation des conflits"""
         try:
             # Générer la palette de couleurs pour les intervenants
             color_palette = [
                 "#32a852", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", 
-                "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6366f1", 
-                "#10b981", "#f59e0b", "#64748b", "#9333ea", "#dc2626"
+                "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6366f1"
             ]
             
             # Créer un mapping couleur pour chaque intervenant
@@ -71,14 +71,20 @@ class OpenAIClient:
                     data["repos"] = intervenant.repos
                 intervenants_data.append(data)
             
-            # Construire un message utilisateur compact
-            user_message = f"""INTERVENTIONS ({len(interventions_data)} total):
+            # Construire un message utilisateur compact avec emphasis sur les conflits
+            user_message = f"""INTERVENTIONS ({len(interventions_data)} total - traiter CHAQUE une EXACTEMENT UNE fois):
 {json.dumps(interventions_data, ensure_ascii=False)}
 
 INTERVENANTS ({len(intervenants_data)} total):
 {json.dumps(intervenants_data, ensure_ascii=False)}
 
-TRAITER TOUTES LES {len(interventions_data)} INTERVENTIONS."""
+RÈGLES CRITIQUES:
+- AUCUN intervenant ne peut être à 2 endroits en même temps
+- VÉRIFIER les horaires avant assignation
+- 15 min minimum entre interventions d'un même intervenant
+- Si conflit: chercher autre intervenant ou marquer non_planifiable
+
+RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
             
             logger.info(f"Envoi de {len(interventions_data)} interventions et {len(intervenants_data)} intervenants à OpenAI...")
             logger.info(f"Taille du message: ~{len(user_message)} caractères")
@@ -90,8 +96,8 @@ TRAITER TOUTES LES {len(interventions_data)} INTERVENTIONS."""
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": user_message}
                 ],
-                temperature=0.1,  # Très faible pour cohérence
-                max_tokens=4000   # Augmenter pour plus d'interventions
+                temperature=0.05,  # Très faible pour cohérence maximale
+                max_tokens=4000
             )
             
             # Extraire la réponse
@@ -186,19 +192,14 @@ TRAITER TOUTES LES {len(interventions_data)} INTERVENTIONS."""
                     logger.error(f"Erreur création PlanningEvent: {str(e)}")
                     continue
             
-            logger.info(f"✅ Planning généré avec {len(planning_events)} événements sur {len(interventions_data)} interventions")
+            logger.info(f"Planning brut généré avec {len(planning_events)} événements")
             
-            # Vérifier la cohérence des couleurs
-            colors_used = {}
-            for event in planning_events:
-                if event.intervenant not in colors_used:
-                    colors_used[event.intervenant] = event.color
-                elif colors_used[event.intervenant] != event.color:
-                    logger.warning(f"Couleur incohérente pour {event.intervenant}")
+            # VALIDATION ET CORRECTION DES CONFLITS
+            validated_planning = planning_validator.validate_and_fix_planning(planning_events)
             
-            logger.info(f"Couleurs utilisées: {colors_used}")
+            logger.info(f"✅ Planning final validé avec {len(validated_planning)} événements")
             
-            return planning_events
+            return validated_planning
             
         except openai.APIError as e:
             logger.error(f"Erreur API OpenAI: {str(e)}")
