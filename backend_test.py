@@ -54,15 +54,15 @@ def test_upload_csv():
     print("\n=== Testing Upload CSV Endpoint ===")
     try:
         # Check if test files exist
-        if not os.path.exists(INTERVENTIONS_CSV) or not os.path.exists(INTERVENANTS_CSV):
+        if not os.path.exists(INTERVENTIONS_COORDONNEES_CSV) or not os.path.exists(INTERVENANTS_CSV):
             print("❌ Test CSV files not found")
             return False
         
         # Open the files
-        with open(INTERVENTIONS_CSV, 'rb') as interventions_file, open(INTERVENANTS_CSV, 'rb') as intervenants_file:
+        with open(INTERVENTIONS_COORDONNEES_CSV, 'rb') as interventions_file, open(INTERVENANTS_CSV, 'rb') as intervenants_file:
             files = {
-                'interventions_file': ('interventions.csv', interventions_file, 'text/csv'),
-                'intervenants_file': ('intervenants.csv', intervenants_file, 'text/csv')
+                'interventions_file': ('interventions_coordonnees.csv', interventions_file, 'text/csv'),
+                'intervenants_file': ('intervenants_coordonnees.csv', intervenants_file, 'text/csv')
             }
             
             # Make the request
