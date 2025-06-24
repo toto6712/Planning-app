@@ -10,6 +10,7 @@ import IntervenantsUpload from "./components/IntervenantsUpload";
 import PlanningGenerator from "./components/PlanningGenerator";
 import CalendarView from "./components/CalendarView";
 import ExportButtons from "./components/ExportButtons";
+import AvsLogo from "./components/AvsLogo";
 
 function App() {
   const [interventionsFile, setInterventionsFile] = useState(null);
