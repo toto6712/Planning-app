@@ -351,9 +351,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Logo AVS Autonomie"
-    - "Couleurs Charte Graphique"
-    - "Interface Upload CSV"
+    - "Légende Enrichie avec Heures de Travail"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
