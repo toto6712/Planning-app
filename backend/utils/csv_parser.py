@@ -366,13 +366,8 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     logger.warning(f"Ligne {index + 2} ignorée : intervenant '{nom}' déjà présent (doublon détecté)")
                     continue
                 
-                # Récupérer les champs obligatoires et optionnels
-                repos = ""
-                
-                if repos_col and pd.notna(row.get(repos_col)):
-                    repos = str(row[repos_col]).strip()
-                    if repos.lower() == 'nan':
-                        repos = ""
+                # Récupérer les champs obligatoires
+                # Les temps sont déjà récupérés plus haut
                 
                 intervenant = Intervenant(
                     nom_prenom=nom,
