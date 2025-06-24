@@ -295,6 +295,17 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                     end_dt = start_dt + duration_td
                     end_iso = end_dt.isoformat()
                     
+                    # Calculer le temps de trajet pour ce fallback
+                    trajet_temps = "0 min"
+                    if i > 0 and len(fallback_planning) > 0:
+                        # Prendre l'adresse de la dernière intervention
+                        prev_address = fallback_planning[-1]["adresse"]
+                        current_address = intervention.adresse
+                        
+                        if prev_address in travel_times and current_address in travel_times[prev_address]:
+                            trajet_minutes = travel_times[prev_address][current_address]
+                            trajet_temps = f"{trajet_minutes} min"
+                    
                     fallback_event = {
                         "client": intervention.client,
                         "intervenant": intervenant_assigned,
@@ -302,7 +313,7 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                         "end": end_iso,
                         "color": colors[i % len(colors)],
                         "non_planifiable": False,
-                        "trajet_precedent": "0 min",
+                        "trajet_precedent": trajet_temps,
                         "adresse": intervention.adresse
                     }
                     
