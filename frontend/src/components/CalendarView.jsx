@@ -14,13 +14,7 @@ const CalendarView = ({ planningData, stats }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentView, setCurrentView] = useState('timeGridWeek');
 
-  // Couleurs des intervenants
-  const intervenantColors = {
-    'Dupont': '#32a852',
-    'Martin': '#3b82f6', 
-    'Leroy': '#f59e0b',
-    'Aucun disponible': '#a0e0ff'
-  };
+  const [viewFilter, setViewFilter] = useState('all'); // all, day, week, month
 
   const getLegendData = () => {
     const intervenantData = new Map();
@@ -36,6 +30,37 @@ const CalendarView = ({ planningData, stats }) => {
     });
     
     return Array.from(intervenantData.values()).sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  // Filtrer les événements selon la vue sélectionnée
+  const getFilteredEvents = () => {
+    if (!planningData) return [];
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay() + 1); // Lundi
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6); // Dimanche
+    
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    return planningData.filter(event => {
+      const eventDate = new Date(event.start);
+      const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+      
+      switch (viewFilter) {
+        case 'day':
+          return eventDay.getTime() === today.getTime();
+        case 'week':
+          return eventDate >= weekStart && eventDate <= weekEnd;
+        case 'month':
+          return eventDate >= monthStart && eventDate <= monthEnd;
+        default:
+          return true;
+      }
+    });
   };
 
   const handleEventClick = (eventInfo) => {
