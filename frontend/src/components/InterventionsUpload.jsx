@@ -163,17 +163,18 @@ const InterventionsUpload = ({ onFileUploaded, interventionsFile }) => {
         <div className="mt-4 p-3 bg-white/60 rounded-lg border border-blue-200">
           <h4 className="font-medium text-blue-900 text-sm mb-2">📋 Format attendu :</h4>
           <code className="block text-xs bg-white p-2 rounded border">
-            Client,Date,Durée,Adresse,Code Postal,Intervenant<br/>
-            Martin Dubois,29/06/2025 08:00,01:00,1 rue des Lilas Strasbourg,67000,<br/>
-            Sophie Bernard,29/06/2025 14:30,00:45,5 avenue des Roses Strasbourg,67100,Dupont
+            Client,Date,Durée,Adresse,Intervenant,Binôme,Référent<br/>
+            Martin Dubois,29/06/2025 08:00,01:00,1 rue des Lilas Strasbourg,,false,<br/>
+            Sophie Bernard,29/06/2025 14:30,00:45,5 avenue des Roses Strasbourg,Dupont,true,Martin
           </code>
           <div className="mt-2 text-xs text-blue-700 space-y-1">
             <p>• <strong>Client</strong> : Nom du client à visiter</p>
             <p>• <strong>Date</strong> : Format JJ/MM/AAAA HH:MM</p>
             <p>• <strong>Durée</strong> : Format HH:MM</p>
-            <p>• <strong>Adresse</strong> : Adresse sans code postal</p>
-            <p>• <strong>Code Postal</strong> : Code postal séparé (optionnel)</p>
+            <p>• <strong>Adresse</strong> : Adresse complète avec ville</p>
             <p>• <strong>Intervenant</strong> : Nom imposé ou vide pour auto-assignation</p>
+            <p>• <strong>Binôme</strong> : true si 2 intervenants requis (optionnel)</p>
+            <p>• <strong>Référent</strong> : Intervenant préféré pour ce client (optionnel)</p>
           </div>
         </div>
       </CardContent>
