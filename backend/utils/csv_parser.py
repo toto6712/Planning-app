@@ -306,6 +306,8 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
             logger.info(f"Colonne repos trouvée: {repos_col}")
         
         intervenants = []
+        noms_vus = set()  # Pour détecter les doublons
+        
         for index, row in df.iterrows():
             try:
                 # Vérifier que les colonnes critiques ne sont pas vides
@@ -326,6 +328,12 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     logger.warning(f"Ligne {index + 2} ignorée : données manquantes critiques")
                     continue
                 
+                # Vérifier les doublons par nom (insensible à la casse)
+                nom_lower = nom.lower()
+                if nom_lower in noms_vus:
+                    logger.warning(f"Ligne {index + 2} ignorée : intervenant '{nom}' déjà présent (doublon détecté)")
+                    continue
+                
                 # Récupérer les repos (peut être vide)
                 repos = ""
                 if repos_col and pd.notna(row.get(repos_col)):
@@ -341,6 +349,7 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     weekend=weekend
                 )
                 intervenants.append(intervenant)
+                noms_vus.add(nom_lower)
                 
                 logger.debug(f"Intervenant créé: {intervenant.nom}")
                 
