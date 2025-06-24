@@ -163,16 +163,19 @@ const IntervenantsUpload = ({ onFileUploaded, intervenantsFile }) => {
         <div className="mt-4 p-3 bg-white/60 rounded-lg border border-green-200">
           <h4 className="font-medium text-green-900 text-sm mb-2">📋 Format attendu :</h4>
           <code className="block text-xs bg-white p-2 rounded border">
-            Nom,Adresse,Disponibilités,Repos,Week-end<br/>
-            Dupont,12 avenue des Vosges Strasbourg,L-M-M-J-V 07-14,2025-07-01,A<br/>
-            Martin,8 rue du Commerce Strasbourg,L-M-M-J-V-S 14-22,,B
+            Nom Prenom,Adresse,Heure Mensuel,Heure Hebdomaire<br/>
+            Jean Dupont,12 avenue des Vosges Strasbourg,151h,35h<br/>
+            Pierre Martin,8 rue du Commerce Strasbourg,169h,39h
           </code>
           <div className="mt-2 text-xs text-green-700 space-y-1">
-            <p>• <strong>Nom</strong> : Nom de l'intervenant</p>
+            <p>• <strong>Nom Prenom</strong> : Nom complet de l'intervenant</p>
             <p>• <strong>Adresse</strong> : Domicile de l'intervenant</p>
-            <p>• <strong>Disponibilités</strong> : Jours et heures (L-M-M-J-V-S-D HH-HH)</p>
-            <p>• <strong>Repos</strong> : Date de congé spécifique (format AAAA-MM-JJ)</p>
-            <p>• <strong>Week-end</strong> : Type A ou B pour alternance</p>
+            <p>• <strong>Heure Mensuel</strong> : Nombre d'heures mensuelles (ex: 151h, 169h)</p>
+            <p>• <strong>Heure Hebdomaire</strong> : Nombre d'heures hebdomadaires (ex: 35h, 39h)</p>
+          </div>
+          <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+            <p><strong>🤖 Gestion automatique par l'IA :</strong></p>
+            <p>• Week-ends alternés (1 sur 2) • Horaires de travail optimisés • Jours de repos intelligents</p>
           </div>
         </div>
       </CardContent>
