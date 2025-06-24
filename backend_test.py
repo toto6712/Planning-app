@@ -11,6 +11,7 @@ API_BASE_URL = f"{BACKEND_URL}/api"
 # Test files
 INTERVENTIONS_CSV = "/app/interventions.csv"
 INTERVENANTS_CSV = "/app/intervenants.csv"
+INTERVENANTS_DUPLICATES_CSV = "/app/intervenants_duplicates.csv"
 
 # Test results
 test_results = {
