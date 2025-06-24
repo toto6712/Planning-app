@@ -174,8 +174,8 @@ const IntervenantsUpload = ({ onFileUploaded, intervenantsFile }) => {
             <p>• <strong>Heure hebdomadaire</strong> : Nombre d'heures hebdomadaires (ex: 35h, 39h)</p>
           </div>
           <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-            <p><strong>🤖 Gestion automatique par l'IA :</strong></p>
-            <p>• Week-ends alternés (1 sur 2) • Horaires de travail optimisés • Jours de repos intelligents</p>
+            <p><strong>🤖 Détection automatique par l'IA :</strong></p>
+            <p>• Week-ends alternés selon contrat (≥35h = roulement A/B) • Secteurs par ville • Contraintes spéciales Leslie/Larbi • Plages horaires optimisées</p>
           </div>
         </div>
       </CardContent>
