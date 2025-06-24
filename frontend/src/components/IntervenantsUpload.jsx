@@ -92,12 +92,12 @@ const IntervenantsUpload = ({ onFileUploaded, intervenantsFile }) => {
             onDrop={handleDrop}
           >
             <div className="space-y-4">
-              <div className="mx-auto w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
-                <FileText className={`h-6 w-6 text-green-600 transition-transform duration-300 ${dragActive ? 'scale-110' : ''}`} />
+              <div className="mx-auto w-12 h-12 bg-avs-green/20 rounded-full flex items-center justify-center">
+                <FileText className={`h-6 w-6 text-avs-green transition-transform duration-300 ${dragActive ? 'scale-110' : ''}`} />
               </div>
               
               <div>
-                <p className="font-medium text-green-900">
+                <p className="font-medium text-avs-green">
                   Glissez intervenants.csv ici
                 </p>
                 <p className="text-sm text-green-600 mt-1">
