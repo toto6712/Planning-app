@@ -299,14 +299,20 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                 # Recherche partielle pour compatibilité
                 for avail_col in available_columns:
                     avail_lower = avail_col.lower().replace('é', 'e').replace(' ', '').replace('_', '')
-                    req_lower = req_col.lower().replace('é', 'e').replace('_', '')
+                    req_lower = req_col.lower().replace('é', 'e').replace('_', '').replace(' ', '')
                     
                     # Mapping spécial pour compatibilité
-                    if req_lower == 'jourstravail' and ('disponibilite' in avail_lower or 'jours' in avail_lower):
+                    if 'nom' in req_lower and ('nom' in avail_lower or 'prenom' in avail_lower):
                         column_mapping[req_col] = avail_col
                         found = True
-                        logger.info(f"Mapping compatible jours: {req_col} -> {avail_col}")
+                        logger.info(f"Mapping nom: {req_col} -> {avail_col}")
                         break
+                    elif 'heure' in req_lower and 'heure' in avail_lower:
+                        if ('mensuel' in req_lower and 'mensuel' in avail_lower) or ('hebdomaire' in req_lower and 'hebdomaire' in avail_lower):
+                            column_mapping[req_col] = avail_col
+                            found = True
+                            logger.info(f"Mapping heure: {req_col} -> {avail_col}")
+                            break
                     elif req_lower in avail_lower:
                         column_mapping[req_col] = avail_col
                         found = True
