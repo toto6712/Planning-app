@@ -97,24 +97,62 @@ TRAITER TOUTES LES {len(interventions_data)} INTERVENTIONS."""
             # Extraire la réponse
             planning_json = response.choices[0].message.content.strip()
             logger.info(f"Réponse OpenAI reçue: {len(planning_json)} caractères")
+            logger.info(f"Début de la réponse: {planning_json[:200]}...")
             
-            # Parser le JSON
+            # Nettoyer et extraire le JSON
             try:
-                planning_data = json.loads(planning_json)
+                # Supprimer les balises markdown si présentes
+                if "```json" in planning_json:
+                    start = planning_json.find("```json") + 7
+                    end = planning_json.find("```", start)
+                    if end > start:
+                        planning_json = planning_json[start:end].strip()
+                elif "```" in planning_json:
+                    start = planning_json.find("```") + 3
+                    end = planning_json.find("```", start)
+                    if end > start:
+                        planning_json = planning_json[start:end].strip()
+                
+                # Trouver le JSON array
+                start_bracket = planning_json.find("[")
+                end_bracket = planning_json.rfind("]")
+                
+                if start_bracket >= 0 and end_bracket > start_bracket:
+                    clean_json = planning_json[start_bracket:end_bracket + 1]
+                    logger.info(f"JSON extrait: {clean_json[:100]}...")
+                    planning_data = json.loads(clean_json)
+                else:
+                    # Si pas de crochets trouvés, essayer de parser directement
+                    if planning_json.strip():
+                        planning_data = json.loads(planning_json)
+                    else:
+                        raise ValueError("Réponse OpenAI vide")
+                        
             except json.JSONDecodeError as e:
                 logger.error(f"Erreur parsing JSON OpenAI: {str(e)}")
-                logger.error(f"Contenu reçu: {planning_json}")
-                # Essayer de nettoyer la réponse si elle contient du texte en plus
-                if "```json" in planning_json:
-                    start = planning_json.find("[")
-                    end = planning_json.rfind("]") + 1
-                    if start >= 0 and end > start:
-                        clean_json = planning_json[start:end]
-                        planning_data = json.loads(clean_json)
-                    else:
-                        raise ValueError(f"Impossible d'extraire le JSON: {str(e)}")
-                else:
-                    raise ValueError(f"Réponse OpenAI invalide: {str(e)}")
+                logger.error(f"Contenu complet reçu: {planning_json}")
+                
+                # Tentative de récupération en cas d'erreur
+                if not planning_json.strip():
+                    raise ValueError("L'IA n'a pas retourné de réponse. Réessayez avec moins d'interventions ou vérifiez votre clé OpenAI.")
+                
+                # Essayer de générer un planning de base en cas d'échec total
+                logger.warning("Génération d'un planning de base en cas d'échec de l'IA")
+                planning_data = self.generate_fallback_planning(interventions, intervenants)
+                
+            except Exception as e:
+                logger.error(f"Erreur inattendue lors du parsing: {str(e)}")
+                logger.error(f"Réponse complète: {planning_json}")
+                raise ValueError(f"Impossible de traiter la réponse de l'IA: {str(e)}")
+            
+            # Vérifier que planning_data est une liste
+            if not isinstance(planning_data, list):
+                logger.error(f"Format de réponse invalide: {type(planning_data)}")
+                raise ValueError("L'IA n'a pas retourné une liste d'interventions valide")
+            
+            if not planning_data:
+                logger.error("Liste d'interventions vide retournée par l'IA")
+                raise ValueError("L'IA n'a retourné aucune intervention planifiée")
             
             # Vérifier que toutes les interventions ont été traitées
             if len(planning_data) != len(interventions_data):
