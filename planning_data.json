@@ -1,0 +1,41 @@
+[
+  {
+    "id": "f1bef2d0-2425-4e48-85a7-e9d2c2d8cba5",
+    "client": "Mme Martin",
+    "intervenant": "Marie Durand",
+    "start": "2025-06-29T08:00",
+    "end": "2025-06-29T09:00",
+    "color": "#32a852",
+    "non_planifiable": false,
+    "trajet_precedent": "0 min depuis derni\u00e8re intervention",
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "raison": null
+  },
+  {
+    "id": "4a2c4077-10ec-4496-a64f-90a95e218636",
+    "client": "Mme Bernard",
+    "intervenant": "Marie Durand",
+    "start": "2025-06-29T14:00",
+    "end": "2025-06-29T15:00",
+    "color": "#32a852",
+    "non_planifiable": false,
+    "trajet_precedent": "8 min depuis derni\u00e8re intervention",
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "raison": null
+  },
+  {
+    "id": "c0a7a7e7-adcb-476d-83ef-12ab32969544",
+    "client": "M. Dupont",
+    "intervenant": "Jean Dupont",
+    "start": "2025-06-29T09:30",
+    "end": "2025-06-29T11:00",
+    "color": "#3b82f6",
+    "non_planifiable": false,
+    "trajet_precedent": "4 min depuis derni\u00e8re intervention",
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "raison": null
+  }
+]
