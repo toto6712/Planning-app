@@ -92,6 +92,17 @@ const CalendarView = ({ planningData, stats }) => {
 
   const handleDateClick = (dateInfo) => {
     console.log('Date cliquée:', dateInfo.dateStr);
+    setSelectedDate(dateInfo.dateStr);
+    if (viewFilter === 'all') {
+      setViewFilter('day');
+    }
+  };
+
+  const handleFilterChange = (newFilter) => {
+    setViewFilter(newFilter);
+    if (newFilter !== 'custom') {
+      setShowDatePicker(false);
+    }
   };
 
   const formatDuration = (start, end) => {
