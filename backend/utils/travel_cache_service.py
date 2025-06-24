@@ -9,7 +9,7 @@ import asyncio
 logger = logging.getLogger(__name__)
 
 class TravelCacheService:
-    """Service pour gérer le cache persistant des temps de trajet"""
+    """Service pour gérer le cache persistant des temps de trajet basé sur les coordonnées"""
     
     def __init__(self, cache_file_path: str = "/app/data/travel_times_cache.csv"):
         self.cache_file_path = cache_file_path
@@ -32,20 +32,22 @@ class TravelCacheService:
                 # Construire le dictionnaire de cache pour un accès rapide
                 self.cache_dict = {}
                 for _, row in self.cache_df.iterrows():
-                    addr1 = row['adresse_depart']
-                    addr2 = row['adresse_arrivee']
+                    coord1 = f"{row['lat_depart']},{row['lon_depart']}"
+                    coord2 = f"{row['lat_arrivee']},{row['lon_arrivee']}"
                     temps = int(row['temps_minutes'])
                     
-                    if addr1 not in self.cache_dict:
-                        self.cache_dict[addr1] = {}
-                    self.cache_dict[addr1][addr2] = temps
+                    if coord1 not in self.cache_dict:
+                        self.cache_dict[coord1] = {}
+                    self.cache_dict[coord1][coord2] = temps
                 
-                logger.info(f"Dictionnaire de cache construit avec {len(self.cache_dict)} adresses de départ")
+                logger.info(f"Dictionnaire de cache construit avec {len(self.cache_dict)} coordonnées de départ")
             else:
                 logger.info(f"Aucun cache existant trouvé, création d'un nouveau cache")
                 self.cache_df = pd.DataFrame({
-                    'adresse_depart': [],
-                    'adresse_arrivee': [],
+                    'lat_depart': [],
+                    'lon_depart': [],
+                    'lat_arrivee': [],
+                    'lon_arrivee': [],
                     'temps_minutes': [],
                     'date_calcul': []
                 })
@@ -55,46 +57,56 @@ class TravelCacheService:
             logger.error(f"Erreur lors du chargement du cache: {str(e)}")
             # Créer un cache vide en cas d'erreur
             self.cache_df = pd.DataFrame({
-                'adresse_depart': [],
-                'adresse_arrivee': [],
+                'lat_depart': [],
+                'lon_depart': [],
+                'lat_arrivee': [],
+                'lon_arrivee': [],
                 'temps_minutes': [],
                 'date_calcul': []
             })
             self.cache_dict = {}
     
-    def get_travel_time(self, addr1: str, addr2: str) -> Optional[int]:
+    def get_travel_time(self, lat1: float, lon1: float, lat2: float, lon2: float) -> Optional[int]:
         """Récupère le temps de trajet depuis le cache"""
         try:
-            if addr1 in self.cache_dict and addr2 in self.cache_dict[addr1]:
-                temps = self.cache_dict[addr1][addr2]
-                logger.debug(f"🎯 Cache HIT: {addr1[:30]}... -> {addr2[:30]}... = {temps} min")
+            coord1 = f"{lat1:.6f},{lon1:.6f}"
+            coord2 = f"{lat2:.6f},{lon2:.6f}"
+            
+            if coord1 in self.cache_dict and coord2 in self.cache_dict[coord1]:
+                temps = self.cache_dict[coord1][coord2]
+                logger.debug(f"🎯 Cache HIT: ({lat1:.4f},{lon1:.4f}) -> ({lat2:.4f},{lon2:.4f}) = {temps} min")
                 return temps
             else:
-                logger.debug(f"🚫 Cache MISS: {addr1[:30]}... -> {addr2[:30]}...")
+                logger.debug(f"🚫 Cache MISS: ({lat1:.4f},{lon1:.4f}) -> ({lat2:.4f},{lon2:.4f})")
                 return None
         except Exception as e:
             logger.error(f"Erreur lors de la récupération du cache: {str(e)}")
             return None
     
-    def add_travel_time(self, addr1: str, addr2: str, temps_minutes: int):
+    def add_travel_time(self, lat1: float, lon1: float, lat2: float, lon2: float, temps_minutes: int):
         """Ajoute un temps de trajet au cache"""
         try:
+            coord1 = f"{lat1:.6f},{lon1:.6f}"
+            coord2 = f"{lat2:.6f},{lon2:.6f}"
+            
             # Ajouter au dictionnaire
-            if addr1 not in self.cache_dict:
-                self.cache_dict[addr1] = {}
-            self.cache_dict[addr1][addr2] = temps_minutes
+            if coord1 not in self.cache_dict:
+                self.cache_dict[coord1] = {}
+            self.cache_dict[coord1][coord2] = temps_minutes
             
             # Ajouter au DataFrame
             new_row = pd.DataFrame({
-                'adresse_depart': [addr1],
-                'adresse_arrivee': [addr2],
+                'lat_depart': [lat1],
+                'lon_depart': [lon1],
+                'lat_arrivee': [lat2],
+                'lon_arrivee': [lon2],
                 'temps_minutes': [temps_minutes],
                 'date_calcul': [datetime.now().isoformat()]
             })
             
             self.cache_df = pd.concat([self.cache_df, new_row], ignore_index=True)
             
-            logger.debug(f"💾 Cache ADD: {addr1[:30]}... -> {addr2[:30]}... = {temps_minutes} min")
+            logger.debug(f"💾 Cache ADD: ({lat1:.4f},{lon1:.4f}) -> ({lat2:.4f},{lon2:.4f}) = {temps_minutes} min")
             
         except Exception as e:
             logger.error(f"Erreur lors de l'ajout au cache: {str(e)}")
