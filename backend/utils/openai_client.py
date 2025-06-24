@@ -100,11 +100,17 @@ class OpenAIClient:
                     "client": i.client,
                     "date": i.date,
                     "duree": i.duree,
-                    "adresse": i.adresse
+                    "adresse": i.adresse,
+                    "secteur": i.secteur
                 }
                 # N'ajouter l'intervenant que s'il est spécifié
                 if i.intervenant:
                     data["intervenant_impose"] = i.intervenant
+                # Ajouter les champs spéciaux
+                if i.binome:
+                    data["binome"] = True
+                if i.intervenant_referent:
+                    data["intervenant_referent"] = i.intervenant_referent
                 interventions_data.append(data)
             
             intervenants_data = []
@@ -114,8 +120,14 @@ class OpenAIClient:
                     "adresse": intervenant.adresse,
                     "heure_hebdomaire": intervenant.heure_hebdomaire,
                     "heure_mensuel": intervenant.heure_mensuel,
+                    "roulement_weekend": intervenant.roulement_weekend,
                     "couleur_assignee": intervenant_colors[intervenant.nom_prenom]
                 }
+                # Ajouter les champs optionnels
+                if intervenant.plage_horaire_autorisee:
+                    data["plage_horaire_autorisee"] = intervenant.plage_horaire_autorisee
+                if intervenant.specialites:
+                    data["specialites"] = intervenant.specialites
                 intervenants_data.append(data)
             
             # Construire un message utilisateur compact avec temps de trajet
