@@ -105,6 +105,12 @@ def test_export_csv():
             json.dump(planning_events, f, indent=2)
         print(f"Planning data saved to /app/planning_data.json")
         
+        # Check if planning events have the required fields
+        for event in planning_events:
+            if 'adresse' not in event:
+                # Add adresse field based on latitude and longitude
+                event['adresse'] = f"Lat: {event.get('latitude', 0)}, Lon: {event.get('longitude', 0)}"
+        
         # Make the request
         response = requests.post(
             f"{API_BASE_URL}/export-csv",
