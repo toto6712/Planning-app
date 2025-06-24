@@ -130,14 +130,18 @@ const CalendarView = ({ planningData, stats }) => {
                 <Badge 
                   key={index}
                   variant="secondary" 
-                  className="flex items-center gap-2 px-3 py-1"
-                  style={{ backgroundColor: legend.color + '20', borderColor: legend.color }}
+                  className="flex items-center gap-2 px-3 py-1 border"
+                  style={{ 
+                    backgroundColor: legend.color + '20', 
+                    borderColor: legend.color,
+                    color: legend.color
+                  }}
                 >
                   <div 
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: legend.color }}
                   />
-                  <span style={{ color: legend.color }}>{legend.name}</span>
+                  <span className="font-medium">{legend.name}</span>
                 </Badge>
               ))}
             </div>
