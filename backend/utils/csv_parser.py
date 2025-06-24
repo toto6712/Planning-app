@@ -405,7 +405,7 @@ def validate_csv_data(interventions: List[Intervention], intervenants: List[Inte
             return False, "Aucun intervenant trouvé"
         
         # Vérifier les doublons dans les intervenants
-        noms_intervenants = [i.nom for i in intervenants]
+        noms_intervenants = [i.nom_prenom for i in intervenants]
         noms_uniques = set(noms_intervenants)
         if len(noms_intervenants) != len(noms_uniques):
             doublons = [nom for nom in noms_uniques if noms_intervenants.count(nom) > 1]
@@ -413,7 +413,7 @@ def validate_csv_data(interventions: List[Intervention], intervenants: List[Inte
             return False, f"Doublons détectés dans les intervenants : {', '.join(doublons)}"
         
         # Vérifier la cohérence des intervenants imposés
-        intervenant_names = {i.nom for i in intervenants}
+        intervenant_names = {i.nom_prenom for i in intervenants}
         for intervention in interventions:
             if intervention.intervenant and intervention.intervenant not in intervenant_names:
                 logger.warning(f"Intervenant '{intervention.intervenant}' non trouvé dans la liste des intervenants")
