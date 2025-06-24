@@ -153,7 +153,7 @@ def test_travel_time_in_fallback():
         # We'll use a valid file but with an invalid date format to trigger fallback
         
         # Create a temporary file with invalid date format
-        with open("/app/fallback_interventions.csv", "w") as f:
+        with open("/app/fallback_interventions.csv", "w", encoding='utf-8') as f:
             f.write("Client,Date,Durée,Adresse,Intervenant\n")
             f.write("Test Client,29/06/2025 08:00,01:00,1 rue des Lilas Strasbourg,\n")
         
