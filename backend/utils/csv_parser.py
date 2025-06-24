@@ -252,9 +252,13 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
         if intervenant_col:
             logger.info(f"Colonne intervenant trouvée: {intervenant_col}")
         
+        logger.info(f"Début du parsing de {len(df)} lignes")
+        
         interventions = []
         for index, row in df.iterrows():
             try:
+                logger.debug(f"Traitement ligne {index + 2}: {dict(row)}")
+                
                 # Vérifier que les colonnes critiques ne sont pas vides
                 client = str(row[column_mapping['Client']]).strip()
                 date = str(row[column_mapping['Date']]).strip()
