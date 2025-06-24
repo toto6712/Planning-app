@@ -121,6 +121,85 @@ class TravelCacheService:
         logger.info(f"📊 Routes manquantes: {len(missing_routes)} sur {len(addresses_list) * (len(addresses_list) - 1)} total")
         return missing_routes
     
+    def check_all_routes_available(self, addresses: Set[str]) -> Tuple[bool, Set[Tuple[str, str]]]:
+        """Vérifie si tous les trajets nécessaires sont disponibles dans le cache"""
+        missing_routes = self.get_missing_routes(addresses)
+        all_available = len(missing_routes) == 0
+        
+        if all_available:
+            logger.info("✅ Tous les trajets sont disponibles dans le cache")
+        else:
+            logger.warning(f"❌ {len(missing_routes)} trajets manquants dans le cache")
+            
+        return all_available, missing_routes
+    
+    def add_multiple_travel_times(self, travel_times_data: Dict[str, Dict[str, int]]):
+        """Ajoute plusieurs temps de trajet au cache en une fois"""
+        try:
+            count = 0
+            for addr1, destinations in travel_times_data.items():
+                for addr2, temps in destinations.items():
+                    if addr1 != addr2:  # Ne pas ajouter les trajets vers soi-même
+                        self.add_travel_time(addr1, addr2, temps)
+                        count += 1
+            
+            logger.info(f"💾 Ajouté {count} nouveaux trajets au cache")
+            return count
+        except Exception as e:
+            logger.error(f"Erreur lors de l'ajout multiple au cache: {str(e)}")
+            return 0
+    
+    def export_missing_routes_template(self, missing_routes: Set[Tuple[str, str]], output_path: str = "/app/data/trajets_manquants.csv"):
+        """Exporte un fichier CSV template avec les trajets manquants à compléter"""
+        try:
+            missing_df = pd.DataFrame([
+                {
+                    'adresse_depart': addr1,
+                    'adresse_arrivee': addr2,
+                    'temps_minutes': '',  # A compléter manuellement
+                    'date_calcul': datetime.now().isoformat()
+                }
+                for addr1, addr2 in missing_routes
+            ])
+            
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            missing_df.to_csv(output_path, index=False)
+            
+            logger.info(f"📋 Template des trajets manquants exporté vers: {output_path}")
+            return output_path
+        except Exception as e:
+            logger.error(f"Erreur lors de l'export du template: {str(e)}")
+            return None
+    
+    def import_travel_times_from_csv(self, csv_path: str) -> int:
+        """Importe des temps de trajet depuis un fichier CSV"""
+        try:
+            if not os.path.exists(csv_path):
+                raise FileNotFoundError(f"Fichier non trouvé: {csv_path}")
+            
+            import_df = pd.read_csv(csv_path)
+            required_columns = ['adresse_depart', 'adresse_arrivee', 'temps_minutes']
+            
+            for col in required_columns:
+                if col not in import_df.columns:
+                    raise ValueError(f"Colonne manquante: {col}")
+            
+            count = 0
+            for _, row in import_df.iterrows():
+                addr1 = str(row['adresse_depart']).strip()
+                addr2 = str(row['adresse_arrivee']).strip()
+                temps = row['temps_minutes']
+                
+                if pd.notna(temps) and temps != '' and addr1 and addr2:
+                    self.add_travel_time(addr1, addr2, int(temps))
+                    count += 1
+            
+            logger.info(f"📥 Importé {count} trajets depuis {csv_path}")
+            return count
+        except Exception as e:
+            logger.error(f"Erreur lors de l'import: {str(e)}")
+            return 0
+    
     def get_cached_travel_times(self, addresses: Set[str]) -> Dict[str, Dict[str, int]]:
         """Retourne tous les temps de trajet disponibles dans le cache pour les adresses données"""
         travel_times = {}
