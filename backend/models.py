@@ -13,14 +13,10 @@ class Intervention(BaseModel):
     
 class Intervenant(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    nom: str
+    nom_prenom: str
     adresse: str
-    jours_travail: str  # Format: "Lundi, Mardi, Mercredi, Jeudi, Vendredi"
-    horaires: str  # Format: "07h00-14h00" ou "14h00-22h00"
-    temps_hebdo: Optional[str] = ""  # Format: "35h" ou "39h"
-    temps_mensuel: Optional[str] = ""  # Format: "151h" ou "169h"
-    repos: Optional[str] = ""  # Format: "2025-06-30"
-    weekend: str  # "A" ou "B"
+    heure_mensuel: str  # Format: "151h" ou "169h"
+    heure_hebdomaire: str  # Format: "35h" ou "39h"
 
 class PlanningEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
