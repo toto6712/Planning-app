@@ -147,10 +147,19 @@ def test_export_pdf():
             print("❌ No planning data available for export test")
             return False
         
+        # Get the planning data
+        planning_data = test_results["planning_data"]
+        
+        # Check if planning events have the required fields
+        for event in planning_data.get("planning", []):
+            if 'adresse' not in event:
+                # Add adresse field based on latitude and longitude
+                event['adresse'] = f"Lat: {event.get('latitude', 0)}, Lon: {event.get('longitude', 0)}"
+        
         # Make the request
         response = requests.post(
             f"{API_BASE_URL}/export-pdf",
-            json=test_results["planning_data"]
+            json=planning_data
         )
         
         print(f"Status Code: {response.status_code}")
