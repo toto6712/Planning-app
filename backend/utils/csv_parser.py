@@ -356,8 +356,8 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         # Supprimer les lignes complètement vides
         df = df.dropna(how='all')
         
-        # Vérifier les colonnes obligatoires (flexible)
-        required_columns = ['Nom_Prenom', 'Adresse', 'Heure_Mensuel', 'Heure_hebdomadaire']
+        # Vérifier les colonnes obligatoires (avec latitude/longitude)
+        required_columns = ['Nom_Prenom', 'Latitude', 'Longitude', 'Heure_Mensuel', 'Heure_hebdomadaire']
         available_columns = df.columns.tolist()
         
         logger.info(f"Colonnes requises: {required_columns}")
@@ -400,6 +400,16 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                         found = True
                         logger.info(f"Mapping nom: {req_col} -> {avail_col}")
                         break
+                    elif 'latitude' in req_lower and 'latitude' in avail_lower:
+                        column_mapping[req_col] = avail_col
+                        found = True
+                        logger.info(f"Mapping latitude: {req_col} -> {avail_col}")
+                        break
+                    elif 'longitude' in req_lower and 'longitude' in avail_lower:
+                        column_mapping[req_col] = avail_col
+                        found = True
+                        logger.info(f"Mapping longitude: {req_col} -> {avail_col}")
+                        break
                     elif 'heure' in req_lower and 'heure' in avail_lower:
                         if ('mensuel' in req_lower and 'mensuel' in avail_lower) or ('hebdomaire' in req_lower and 'hebdomaire' in avail_lower):
                             column_mapping[req_col] = avail_col
@@ -415,20 +425,7 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                 logger.error(f"Colonne '{req_col}' non trouvée parmi {available_columns}")
                 raise ValueError(f"Colonne manquante dans intervenants.csv: '{req_col}'. Colonnes disponibles: {available_columns}")
         
-        # Ajouter les colonnes optionnelles
-        repos_col = None
-        temps_hebdo_col = None
-        temps_mensuel_col = None
-        
-        for col in available_columns:
-            col_lower = col.lower().replace(' ', '').replace('_', '')
-            if 'repos' in col_lower:
-                repos_col = col
-                break
-        
         logger.info(f"Colonnes mappées: {column_mapping}")
-        if repos_col:
-            logger.info(f"Colonne repos trouvée: {repos_col}")
         
         intervenants = []
         noms_vus = set()  # Pour détecter les doublons
@@ -437,20 +434,35 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
             try:
                 # Vérifier que les colonnes critiques ne sont pas vides
                 nom = str(row[column_mapping['Nom_Prenom']]).strip()
-                adresse = str(row[column_mapping['Adresse']]).strip()
+                latitude = row[column_mapping['Latitude']]
+                longitude = row[column_mapping['Longitude']]
                 temps_mensuel = str(row[column_mapping['Heure_Mensuel']]).strip()
                 temps_hebdo = str(row[column_mapping['Heure_hebdomadaire']]).strip()
                 
                 # Ignorer les lignes avec des valeurs manquantes critiques
                 if (pd.isna(row[column_mapping['Nom_Prenom']]) or 
-                    pd.isna(row[column_mapping['Adresse']]) or 
+                    pd.isna(row[column_mapping['Latitude']]) or
+                    pd.isna(row[column_mapping['Longitude']]) or 
                     pd.isna(row[column_mapping['Heure_Mensuel']]) or
                     pd.isna(row[column_mapping['Heure_hebdomadaire']]) or
                     nom.lower() in ['nan', ''] or 
-                    adresse.lower() in ['nan', ''] or
                     temps_mensuel.lower() in ['nan', ''] or
                     temps_hebdo.lower() in ['nan', '']):
                     logger.warning(f"Ligne {index + 2} ignorée : données manquantes critiques")
+                    continue
+                
+                # Valider les coordonnées
+                try:
+                    lat = float(latitude)
+                    lon = float(longitude)
+                    
+                    # Vérifier que les coordonnées sont valides
+                    if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+                        logger.warning(f"Ligne {index + 2} ignorée : coordonnées invalides ({lat}, {lon})")
+                        continue
+                        
+                except (ValueError, TypeError):
+                    logger.warning(f"Ligne {index + 2} ignorée : coordonnées non numériques")
                     continue
                 
                 # Vérifier les doublons par nom (insensible à la casse)
@@ -467,7 +479,8 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                 
                 intervenant = Intervenant(
                     nom_prenom=nom,
-                    adresse=adresse,
+                    latitude=lat,
+                    longitude=lon,
                     heure_hebdomaire=temps_hebdo,
                     heure_mensuel=temps_mensuel,
                     plage_horaire_autorisee=plage_horaire_autorisee,
@@ -477,7 +490,7 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                 intervenants.append(intervenant)
                 noms_vus.add(nom_lower)
                 
-                logger.debug(f"Intervenant créé: {intervenant.nom_prenom}")
+                logger.debug(f"Intervenant créé: {intervenant.nom_prenom} à ({lat:.4f},{lon:.4f})")
                 
             except Exception as e:
                 logger.warning(f"Erreur ligne {index + 2}: {str(e)} - Ligne ignorée")
