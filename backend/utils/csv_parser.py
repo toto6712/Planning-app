@@ -468,14 +468,20 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     logger.warning(f"Ligne {index + 2} ignorée : intervenant '{nom}' déjà présent (doublon détecté)")
                     continue
                 
-                # Récupérer les champs obligatoires
-                # Les temps sont déjà récupérés plus haut
+                # Détecter les spécialités et plages horaires spéciales
+                specialites, plage_horaire_autorisee = detect_special_intervenants(nom)
+                
+                # Calculer le roulement week-end selon les heures
+                roulement_weekend = calculate_weekend_roulement(temps_hebdo)
                 
                 intervenant = Intervenant(
                     nom_prenom=nom,
                     adresse=adresse,
                     heure_hebdomaire=temps_hebdo,
-                    heure_mensuel=temps_mensuel
+                    heure_mensuel=temps_mensuel,
+                    plage_horaire_autorisee=plage_horaire_autorisee,
+                    specialites=specialites,
+                    roulement_weekend=roulement_weekend
                 )
                 intervenants.append(intervenant)
                 noms_vus.add(nom_lower)
