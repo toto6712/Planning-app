@@ -12,6 +12,7 @@ API_BASE_URL = f"{BACKEND_URL}/api"
 INTERVENTIONS_CSV = "/app/interventions.csv"
 INTERVENANTS_CSV = "/app/intervenants.csv"
 INTERVENANTS_DUPLICATES_CSV = "/app/intervenants_duplicates.csv"
+INTERVENANTS_NOUVEAU_FORMAT_CSV = "/app/intervenants_nouveau_format.csv"
 
 # Test results
 test_results = {
@@ -20,6 +21,7 @@ test_results = {
     "export_csv": False,
     "export_pdf": False,
     "duplicate_detection": False,
+    "new_csv_format": False,
     "planning_data": None
 }
 
