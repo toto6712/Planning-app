@@ -63,6 +63,8 @@ const CalendarView = ({ planningData, stats }) => {
     });
   };
 
+  const filteredEvents = getFilteredEvents();
+
   const handleEventClick = (eventInfo) => {
     setSelectedEvent(eventInfo.event);
   };
