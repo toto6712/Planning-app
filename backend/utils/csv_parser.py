@@ -217,7 +217,7 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
         df = df.dropna(how='all')
         
         # Vérifier les colonnes obligatoires (avec latitude/longitude)
-        required_columns = ['Client', 'Date', 'Durée', 'Latitude', 'Longitude']
+        required_columns = ['Client', 'Date', 'Duree', 'Latitude', 'Longitude']
         available_columns = df.columns.tolist()
         
         # Mapping flexible des colonnes
@@ -236,9 +236,13 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                     break
                     
             if not found:
-                # Recherche partielle
+                # Recherche partielle pour certains termes spéciaux
                 for avail_col in available_columns:
-                    if req_col.lower().replace('é', 'e') in avail_col.lower().replace('é', 'e').replace('ã©', 'e'):
+                    avail_lower = avail_col.lower().replace('é', 'e').replace('ã©', 'e')
+                    req_lower = req_col.lower().replace('é', 'e')
+                    
+                    if (req_lower == 'duree' and ('duree' in avail_lower or 'duree' in avail_lower or 'duration' in avail_lower)) or \
+                       (req_lower in avail_lower):
                         column_mapping[req_col] = avail_col
                         found = True
                         logger.info(f"Mapping partiel: {req_col} -> {avail_col}")
