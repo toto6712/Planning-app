@@ -99,6 +99,12 @@ def test_export_csv():
         
         planning_events = test_results["planning_data"].get("planning", [])
         
+        # Save planning data to JSON for inspection
+        import json
+        with open("/app/planning_data.json", "w") as f:
+            json.dump(planning_events, f, indent=2)
+        print(f"Planning data saved to /app/planning_data.json")
+        
         # Make the request
         response = requests.post(
             f"{API_BASE_URL}/export-csv",
