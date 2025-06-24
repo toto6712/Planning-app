@@ -271,14 +271,14 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                 # Vérifier que les colonnes critiques ne sont pas vides
                 client = str(row[column_mapping['Client']]).strip()
                 date = str(row[column_mapping['Date']]).strip()
-                duree = str(row[column_mapping['Durée']]).strip()
+                duree = str(row[column_mapping['Duree']]).strip()
                 latitude = row[column_mapping['Latitude']]
                 longitude = row[column_mapping['Longitude']]
                 
                 # Ignorer les lignes avec des valeurs manquantes critiques
                 if (pd.isna(row[column_mapping['Client']]) or 
                     pd.isna(row[column_mapping['Date']]) or 
-                    pd.isna(row[column_mapping['Durée']]) or
+                    pd.isna(row[column_mapping['Duree']]) or
                     pd.isna(row[column_mapping['Latitude']]) or
                     pd.isna(row[column_mapping['Longitude']]) or
                     client.lower() in ['nan', ''] or 
