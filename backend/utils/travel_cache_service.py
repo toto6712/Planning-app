@@ -168,14 +168,15 @@ class TravelCacheService:
     def get_cache_stats(self) -> Dict[str, any]:
         """Retourne les statistiques du cache"""
         try:
-            unique_addresses = set()
+            unique_coordinates = set()
             if not self.cache_df.empty:
-                unique_addresses.update(self.cache_df['adresse_depart'].unique())
-                unique_addresses.update(self.cache_df['adresse_arrivee'].unique())
+                for _, row in self.cache_df.iterrows():
+                    unique_coordinates.add((row['lat_depart'], row['lon_depart']))
+                    unique_coordinates.add((row['lat_arrivee'], row['lon_arrivee']))
             
             return {
                 'total_routes': len(self.cache_df),
-                'unique_addresses': len(unique_addresses),
+                'unique_coordinates': len(unique_coordinates),
                 'cache_file_path': self.cache_file_path,
                 'cache_file_exists': os.path.exists(self.cache_file_path),
                 'cache_file_size_mb': os.path.getsize(self.cache_file_path) / (1024*1024) if os.path.exists(self.cache_file_path) else 0,
@@ -185,7 +186,7 @@ class TravelCacheService:
             logger.error(f"Erreur lors du calcul des statistiques: {str(e)}")
             return {
                 'total_routes': 0,
-                'unique_addresses': 0,
+                'unique_coordinates': 0,
                 'cache_file_path': self.cache_file_path,
                 'cache_file_exists': False,
                 'cache_file_size_mb': 0,
@@ -197,8 +198,10 @@ class TravelCacheService:
         """Vide complètement le cache"""
         try:
             self.cache_df = pd.DataFrame({
-                'adresse_depart': [],
-                'adresse_arrivee': [],
+                'lat_depart': [],
+                'lon_depart': [],
+                'lat_arrivee': [],
+                'lon_arrivee': [],
                 'temps_minutes': [],
                 'date_calcul': []
             })
@@ -212,27 +215,45 @@ class TravelCacheService:
         except Exception as e:
             logger.error(f"Erreur lors du vidage du cache: {str(e)}")
     
-    def remove_old_entries(self, days_old: int = 30):
-        """Supprime les entrées plus anciennes que X jours"""
+    async def calculate_and_cache_missing_routes(self, coordinates: Set[Tuple[float, float]]) -> int:
+        """Calcule et cache automatiquement les trajets manquants via OSRM"""
         try:
-            if self.cache_df.empty:
-                return
+            from .osrm_service import osrm_service
             
-            # Convertir les dates
-            self.cache_df['date_calcul'] = pd.to_datetime(self.cache_df['date_calcul'])
-            cutoff_date = datetime.now() - pd.Timedelta(days=days_old)
+            # Obtenir les trajets manquants
+            all_available, missing_routes = self.check_all_routes_available(coordinates)
             
-            # Filtrer les entrées récentes
-            recent_entries = self.cache_df[self.cache_df['date_calcul'] >= cutoff_date]
-            removed_count = len(self.cache_df) - len(recent_entries)
+            if all_available:
+                logger.info("✅ Aucun trajet manquant, pas de calcul nécessaire")
+                return 0
             
-            if removed_count > 0:
-                self.cache_df = recent_entries
-                # Reconstruire le dictionnaire
-                self.load_cache()
-                logger.info(f"🧹 Supprimé {removed_count} entrées anciennes du cache")
+            logger.info(f"🚀 Calcul automatique de {len(missing_routes)} trajets manquants via OSRM")
+            
+            calculated_count = 0
+            for (coord1, coord2) in missing_routes:
+                lat1, lon1 = coord1
+                lat2, lon2 = coord2
+                
+                # Calculer le temps de trajet via OSRM
+                travel_time = await osrm_service.calculate_travel_time(lat1, lon1, lat2, lon2)
+                
+                # Ajouter au cache
+                self.add_travel_time(lat1, lon1, lat2, lon2, travel_time)
+                calculated_count += 1
+                
+                # Log de progression
+                if calculated_count % 10 == 0:
+                    logger.info(f"📊 Progression cache: {calculated_count}/{len(missing_routes)}")
+            
+            # Sauvegarder le cache
+            self.save_cache()
+            
+            logger.info(f"✅ {calculated_count} nouveaux trajets calculés et mis en cache")
+            return calculated_count
+            
         except Exception as e:
-            logger.error(f"Erreur lors du nettoyage du cache: {str(e)}")
+            logger.error(f"Erreur lors du calcul automatique: {str(e)}")
+            return 0
 
 # Instance globale du service de cache
 travel_cache_service = TravelCacheService()
