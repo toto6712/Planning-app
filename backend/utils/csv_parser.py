@@ -279,15 +279,23 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
             found = False
             for avail_col in available_columns:
                 # Comparaison flexible
-                if (req_col.lower().replace('é', 'e').replace('è', 'e') == 
-                    avail_col.lower().replace('é', 'e').replace('è', 'e')):
+                if (req_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '') == 
+                    avail_col.lower().replace('é', 'e').replace('è', 'e').replace('_', '').replace(' ', '')):
                     column_mapping[req_col] = avail_col
                     found = True
                     break
             if not found:
-                # Recherche partielle
+                # Recherche partielle pour compatibilité
                 for avail_col in available_columns:
-                    if req_col.lower().replace('é', 'e') in avail_col.lower().replace('é', 'e'):
+                    avail_lower = avail_col.lower().replace('é', 'e').replace(' ', '').replace('_', '')
+                    req_lower = req_col.lower().replace('é', 'e').replace('_', '')
+                    
+                    # Mapping spécial pour compatibilité
+                    if req_lower == 'jourstravail' and ('disponibilite' in avail_lower or 'jours' in avail_lower):
+                        column_mapping[req_col] = avail_col
+                        found = True
+                        break
+                    elif req_lower in avail_lower:
                         column_mapping[req_col] = avail_col
                         found = True
                         break
