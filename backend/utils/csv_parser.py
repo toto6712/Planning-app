@@ -279,13 +279,15 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                     lat = float(latitude)
                     lon = float(longitude)
                     
+                    logger.info(f"Ligne {index + 2}: Coordonnées validées - lat={lat}, lon={lon}")
+                    
                     # Vérifier que les coordonnées sont valides
                     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
                         logger.warning(f"Ligne {index + 2} ignorée : coordonnées invalides ({lat}, {lon})")
                         continue
                         
-                except (ValueError, TypeError):
-                    logger.warning(f"Ligne {index + 2} ignorée : coordonnées non numériques")
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Ligne {index + 2} ignorée : coordonnées non numériques - latitude='{latitude}', longitude='{longitude}', error={str(e)}")
                     continue
                 
                 # Récupérer l'intervenant (peut être vide)
