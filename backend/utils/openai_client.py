@@ -30,7 +30,44 @@ class OpenAIClient:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             self.system_prompt = f.read()
 
-    async def calculate_travel_times(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
+    async def get_travel_times_from_cache(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> tuple[Dict[str, Dict[str, int]], bool, set]:
+        """Récupère les temps de trajet depuis le cache, retourne (travel_times, all_available, missing_routes)"""
+        logger.info("🗂️ RÉCUPÉRATION des temps de trajet depuis le cache local")
+        
+        # Collecter TOUTES les adresses
+        all_addresses = set()
+        
+        # Adresses des intervenants
+        for intervenant in intervenants:
+            all_addresses.add(intervenant.adresse)
+            logger.debug(f"Adresse intervenant: {intervenant.nom_prenom} -> {intervenant.adresse}")
+        
+        # Adresses des interventions
+        for intervention in interventions:
+            all_addresses.add(intervention.adresse)
+            logger.debug(f"Adresse intervention: {intervention.client} -> {intervention.adresse}")
+        
+        logger.info(f"📍 {len(all_addresses)} adresses uniques trouvées")
+        
+        # Vérifier si tous les trajets sont disponibles dans le cache
+        all_available, missing_routes = travel_cache_service.check_all_routes_available(all_addresses)
+        
+        if all_available:
+            # Récupérer tous les temps de trajet depuis le cache
+            travel_times = travel_cache_service.get_cached_travel_times(all_addresses)
+            logger.info("✅ TOUS les trajets récupérés depuis le cache local")
+            return travel_times, True, set()
+        else:
+            logger.warning(f"❌ {len(missing_routes)} trajets manquants dans le cache")
+            
+            # Exporter un template pour les trajets manquants
+            template_path = travel_cache_service.export_missing_routes_template(missing_routes)
+            if template_path:
+                logger.info(f"📋 Template des trajets manquants créé: {template_path}")
+            
+            # Retourner les trajets disponibles et les manquants
+            available_travel_times = travel_cache_service.get_cached_travel_times(all_addresses)
+            return available_travel_times, False, missing_routes
         """Calcule TOUS les temps de trajet via OpenStreetMap - AUCUNE valeur par défaut"""
         logger.info("🗺️ CALCUL EXHAUSTIF des temps de trajet via OpenStreetMap (AUCUNE valeur par défaut)")
         
