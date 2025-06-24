@@ -61,20 +61,12 @@ class OpenAIClient:
             intervenants_data = []
             for i, intervenant in enumerate(intervenants):
                 data = {
-                    "nom": intervenant.nom,
+                    "nom_prenom": intervenant.nom_prenom,
                     "adresse": intervenant.adresse,
-                    "jours_travail": intervenant.jours_travail,
-                    "horaires": intervenant.horaires,
-                    "weekend": intervenant.weekend,
-                    "couleur_assignee": intervenant_colors[intervenant.nom]
+                    "heure_hebdomaire": intervenant.heure_hebdomaire,
+                    "heure_mensuel": intervenant.heure_mensuel,
+                    "couleur_assignee": intervenant_colors[intervenant.nom_prenom]
                 }
-                # N'ajouter les champs optionnels que s'ils existent
-                if intervenant.repos:
-                    data["repos"] = intervenant.repos
-                if intervenant.temps_hebdo:
-                    data["temps_hebdo"] = intervenant.temps_hebdo
-                if intervenant.temps_mensuel:
-                    data["temps_mensuel"] = intervenant.temps_mensuel
                 intervenants_data.append(data)
             
             # Construire un message utilisateur compact avec emphasis sur les conflits
