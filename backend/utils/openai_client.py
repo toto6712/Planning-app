@@ -118,17 +118,21 @@ class OpenAIClient:
                 }
                 intervenants_data.append(data)
             
-            # Construire un message utilisateur compact avec emphasis sur les conflits
+            # Construire un message utilisateur compact avec temps de trajet
             user_message = f"""INTERVENTIONS ({len(interventions_data)} total - traiter CHAQUE une EXACTEMENT UNE fois):
 {json.dumps(interventions_data, ensure_ascii=False)}
 
 INTERVENANTS ({len(intervenants_data)} total):
 {json.dumps(intervenants_data, ensure_ascii=False)}
 
+TEMPS DE TRAJET CALCULÉS (OpenStreetMap - en minutes):
+{json.dumps(travel_times, ensure_ascii=False)}
+
 RÈGLES CRITIQUES:
+- UTILISER les temps de trajet réels fournis ci-dessus
 - AUCUN intervenant ne peut être à 2 endroits en même temps
 - VÉRIFIER les horaires avant assignation
-- 15 min minimum entre interventions d'un même intervenant
+- Temps entre interventions = temps de trajet réel + 5 min minimum
 - Si conflit: chercher autre intervenant ou marquer non_planifiable
 
 RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
