@@ -352,13 +352,13 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                 nom = str(row[column_mapping['Nom_Prenom']]).strip()
                 adresse = str(row[column_mapping['Adresse']]).strip()
                 temps_mensuel = str(row[column_mapping['Heure_Mensuel']]).strip()
-                temps_hebdo = str(row[column_mapping['Heure_Hebdomaire']]).strip()
+                temps_hebdo = str(row[column_mapping['Heure_hebdomadaire']]).strip()
                 
                 # Ignorer les lignes avec des valeurs manquantes critiques
                 if (pd.isna(row[column_mapping['Nom_Prenom']]) or 
                     pd.isna(row[column_mapping['Adresse']]) or 
                     pd.isna(row[column_mapping['Heure_Mensuel']]) or
-                    pd.isna(row[column_mapping['Heure_Hebdomaire']]) or
+                    pd.isna(row[column_mapping['Heure_hebdomadaire']]) or
                     nom.lower() in ['nan', ''] or 
                     adresse.lower() in ['nan', ''] or
                     temps_mensuel.lower() in ['nan', ''] or
