@@ -4,14 +4,26 @@ import logging
 import os
 from typing import List, Dict, Any
 from ..models import Intervention, Intervenant, PlanningEvent
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 class OpenAIClient:
     def __init__(self):
-        self.client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        # Charger l'environnement
+        from dotenv import load_dotenv
+        ROOT_DIR = Path(__file__).parent.parent
+        load_dotenv(ROOT_DIR / '.env')
+        
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY non trouvée dans l'environnement")
+            
+        self.client = openai.OpenAI(api_key=api_key)
+        
         # Charger le prompt depuis le fichier
-        with open('ia_prompt.txt', 'r', encoding='utf-8') as f:
+        prompt_path = ROOT_DIR / 'ia_prompt.txt'
+        with open(prompt_path, 'r', encoding='utf-8') as f:
             self.system_prompt = f.read()
     
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
