@@ -297,10 +297,7 @@ test_plan:
     - "Upload CSV Endpoint"
     - "CSV Parser"
     - "Nouveau Format CSV Intervenants"
-  stuck_tasks:
-    - "Upload CSV Endpoint"
-    - "CSV Parser"
-    - "Nouveau Format CSV Intervenants"
+  stuck_tasks: []
   test_all: true
   test_priority: "high_first"
 
