@@ -4,7 +4,10 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
-import { simulateFileProcessing } from '../mock';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const CSVUpload = ({ onFilesProcessed }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -67,20 +70,80 @@ const CSVUpload = ({ onFilesProcessed }) => {
     setUploadStatus(null);
 
     try {
-      const result = await simulateFileProcessing(files);
+      // Créer le FormData pour l'upload
+      const formData = new FormData();
+      formData.append('interventions_file', files.interventions);
+      formData.append('intervenants_file', files.intervenants);
+
+      // Envoyer au backend
+      const response = await axios.post(`${API}/upload-csv`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 60000, // 60 secondes timeout pour l'IA
+      });
+
+      const result = response.data;
+      
       setUploadStatus({
         type: 'success',
         message: result.message
       });
-      onFilesProcessed(result);
+
+      // Convertir les données backend au format frontend
+      const frontendPlanning = result.planning.map(event => ({
+        id: event.id,
+        title: `${event.client} - ${event.intervenant}`,
+        start: event.start,
+        end: event.end,
+        backgroundColor: event.color,
+        borderColor: event.color,
+        extendedProps: {
+          client: event.client,
+          intervenant: event.intervenant,
+          address: event.adresse,
+          duration: calculateDuration(event.start, event.end),
+          nonPlanifiable: event.non_planifiable,
+          trajetPrecedent: event.trajet_precedent || "0 min",
+          raison: event.raison
+        }
+      }));
+
+      onFilesProcessed({
+        success: true,
+        message: result.message,
+        stats: {
+          totalInterventions: result.stats.total_interventions,
+          interventionsPlanifiees: result.stats.interventions_planifiees,
+          interventionsNonPlanifiables: result.stats.interventions_non_planifiables,
+          intervenants: result.stats.intervenants,
+          tauxPlanification: result.stats.taux_planification
+        },
+        planning: frontendPlanning
+      });
+
     } catch (error) {
+      console.error('Erreur traitement fichiers:', error);
+      const errorMessage = error.response?.data?.detail || 
+                          error.message || 
+                          'Erreur lors du traitement des fichiers';
       setUploadStatus({
         type: 'error',
-        message: 'Erreur lors du traitement des fichiers'
+        message: errorMessage
       });
     } finally {
       setProcessing(false);
     }
+  };
+
+  const calculateDuration = (start, end) => {
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+    const diffMs = endTime - startTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+    return hours > 0 ? `${hours}h${minutes.toString().padStart(2, '0')}` : `${minutes}min`;
   };
 
   const resetFiles = () => {
@@ -97,7 +160,7 @@ const CSVUpload = ({ onFilesProcessed }) => {
             Import des fichiers CSV
           </CardTitle>
           <CardDescription>
-            Chargez vos fichiers interventions.csv et intervenants.csv pour générer le planning optimisé
+            Chargez vos fichiers interventions.csv et intervenants.csv pour générer le planning optimisé par IA
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -203,7 +266,7 @@ const CSVUpload = ({ onFilesProcessed }) => {
               {processing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Traitement en cours...
+                  IA en cours de traitement...
                 </>
               ) : (
                 <>
