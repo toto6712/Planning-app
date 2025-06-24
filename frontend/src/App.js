@@ -75,25 +75,15 @@ function App() {
   }, [planningData]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
       <Toaster />
       
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
+      {/* Header AVS Autonomie */}
+      <header className="bg-white/95 backdrop-blur-md border-b border-avs-blue/20 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl">
-                <CalendarDays className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Planning Tournées IA
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Optimisation automatique de vos interventions à domicile
-                </p>
-              </div>
+            <div className="flex items-center gap-4">
+              <AvsLogo className="h-12" />
             </div>
             <div className="flex items-center gap-3">
               {(interventionsFile || intervenantsFile || planningData) && (
@@ -105,8 +95,8 @@ function App() {
                   RESET COMPLET
                 </Button>
               )}
-              <Badge variant="secondary" className="bg-green-100 text-green-800 px-3 py-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+              <Badge variant="secondary" className="bg-avs-green/10 text-avs-green border-avs-green/20 px-3 py-1">
+                <div className="w-2 h-2 bg-avs-green rounded-full mr-2 animate-pulse"></div>
                 IA ACTIVÉE
               </Badge>
             </div>
