@@ -36,10 +36,11 @@ class OpenAIClient:
                 "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6366f1"
             ]
             
-            # Créer un mapping couleur pour chaque intervenant
+            # Créer un mapping couleur pour chaque intervenant (en évitant les doublons)
             intervenant_colors = {}
-            for i, intervenant in enumerate(intervenants):
-                intervenant_colors[intervenant.nom] = color_palette[i % len(color_palette)]
+            noms_uniques = list(set(intervenant.nom for intervenant in intervenants))  # Éliminer les doublons potentiels
+            for i, nom in enumerate(noms_uniques):
+                intervenant_colors[nom] = color_palette[i % len(color_palette)]
             
             logger.info(f"Couleurs assignées aux intervenants: {intervenant_colors}")
             
