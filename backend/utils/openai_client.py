@@ -262,7 +262,7 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
             logger.error(f"Erreur génération planning: {str(e)}")
             raise ValueError(f"Erreur interne: {str(e)}")
     
-    def generate_fallback_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> list:
+    async def generate_fallback_planning(self, interventions: List[Intervention], intervenants: List[Intervenant], travel_times: Dict[str, Dict[str, int]]) -> list:
         """Génère un planning de base en cas d'échec de l'IA"""
         try:
             logger.info("Génération d'un planning de fallback")
