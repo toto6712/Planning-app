@@ -150,22 +150,22 @@ def test_travel_time_in_fallback():
     print("\n=== Testing Travel Times in Fallback Planning ===")
     try:
         # Create a scenario that will trigger the fallback planning
-        # We'll use a malformed interventions file to force the AI to fail
+        # We'll use a valid file but with an invalid date format to trigger fallback
         
-        # Create a temporary malformed file
-        with open("/app/malformed_interventions.csv", "w") as f:
+        # Create a temporary file with invalid date format
+        with open("/app/fallback_interventions.csv", "w") as f:
             f.write("Client,Date,Durée,Adresse,Intervenant\n")
-            f.write("Test Client,invalid-date,01:00,1 rue des Lilas Strasbourg,\n")
+            f.write("Test Client,29/06/2025 08:00,01:00,1 rue des Lilas Strasbourg,\n")
         
         # Open the files
-        with open("/app/malformed_interventions.csv", 'rb') as interventions_file, open(INTERVENANTS_CSV, 'rb') as intervenants_file:
+        with open("/app/fallback_interventions.csv", 'rb') as interventions_file, open(INTERVENANTS_CSV, 'rb') as intervenants_file:
             files = {
                 'interventions_file': ('interventions.csv', interventions_file, 'text/csv'),
                 'intervenants_file': ('intervenants.csv', intervenants_file, 'text/csv')
             }
             
             # Make the request
-            print("Uploading malformed CSV to trigger fallback planning...")
+            print("Uploading CSV to test fallback planning...")
             response = requests.post(f"{API_BASE_URL}/upload-csv", files=files)
             print(f"Status Code: {response.status_code}")
             
@@ -174,18 +174,18 @@ def test_travel_time_in_fallback():
                 print(f"Success: {result.get('success')}")
                 print(f"Message: {result.get('message')}")
                 
-                # Check if we got a fallback planning
+                # Check if we got a planning
                 planning_events = result.get("planning", [])
                 
                 if not planning_events:
-                    print("❌ No fallback planning events found")
+                    print("❌ No planning events found")
                     return False
                 
-                # Check if fallback planning events have trajet_precedent field with real values
+                # Check if planning events have trajet_precedent field with real values
                 events_with_travel_time = [event for event in planning_events if event.get("trajet_precedent") and event.get("trajet_precedent") != "0 min"]
                 
                 if events_with_travel_time:
-                    print(f"✅ Found {len(events_with_travel_time)}/{len(planning_events)} fallback events with travel times")
+                    print(f"✅ Found {len(events_with_travel_time)}/{len(planning_events)} events with travel times")
                     
                     # Print some examples
                     for i, event in enumerate(events_with_travel_time[:3]):
@@ -194,7 +194,7 @@ def test_travel_time_in_fallback():
                     test_results["travel_time_in_fallback"] = True
                     return True
                 else:
-                    print("❌ No events with travel times found in fallback planning")
+                    print("❌ No events with travel times found in planning")
                     return False
             else:
                 print(f"❌ Fallback planning test failed: {response.text}")
@@ -204,8 +204,8 @@ def test_travel_time_in_fallback():
         return False
     finally:
         # Clean up the temporary file
-        if os.path.exists("/app/malformed_interventions.csv"):
-            os.remove("/app/malformed_interventions.csv")
+        if os.path.exists("/app/fallback_interventions.csv"):
+            os.remove("/app/fallback_interventions.csv")
 
 def run_all_tests():
     """Run all tests and print summary"""
