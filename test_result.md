@@ -183,15 +183,18 @@ backend:
 frontend:
   - task: "Chargement Initial"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         -working: "NA"
         -agent: "testing"
         -comment: "Vérification du chargement initial de l'application, affichage du header et des étapes de progression."
+        -working: true
+        -agent: "testing"
+        -comment: "L'application se charge correctement. Le header 'Planning Tournées IA' est bien affiché, le badge 'IA ACTIVÉE' est visible, et les trois étapes de progression (Import CSV, Planning IA, Export) sont correctement affichées."
 
   - task: "Interface Upload CSV"
     implemented: true
