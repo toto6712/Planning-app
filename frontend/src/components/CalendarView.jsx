@@ -460,7 +460,12 @@ const CalendarView = ({ planningData, stats }) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="calendar-container" style={{ height: '600px' }}>
+          <div 
+            className="calendar-container" 
+            style={{ 
+              height: currentView === 'timeGridDay' ? '800px' : '600px' 
+            }}
+          >
             <FullCalendar
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
               initialView={currentView}
@@ -470,7 +475,7 @@ const CalendarView = ({ planningData, stats }) => {
                 center: 'title',
                 right: ''
               }}
-              events={filteredEvents || []}
+              events={getAllEvents()}
               eventClick={handleEventClick}
               dateClick={handleDateClick}
               height="100%"
@@ -479,12 +484,39 @@ const CalendarView = ({ planningData, stats }) => {
               allDaySlot={false}
               nowIndicator={true}
               initialDate={selectedDate}
+              slotDuration={currentView === 'timeGridDay' ? '00:15:00' : '00:30:00'}
+              slotLabelInterval={currentView === 'timeGridDay' ? '00:30:00' : '01:00:00'}
               eventDidMount={(info) => {
-                // Ajouter une classe pour les événements non planifiables
-                if (info.event.extendedProps.nonPlanifiable) {
-                  info.el.classList.add('non-planifiable');
-                  info.el.style.opacity = '0.8';
-                  info.el.style.borderLeft = '4px solid #f59e0b';
+                // Gestion des événements de trajet
+                if (info.event.extendedProps.isTravel) {
+                  info.el.style.backgroundColor = '#00ff88';
+                  info.el.style.borderColor = '#00cc6a';
+                  info.el.style.color = '#000';
+                  info.el.style.fontSize = '10px';
+                  info.el.style.textAlign = 'center';
+                  info.el.style.fontWeight = 'bold';
+                  
+                  // Ajouter tooltip pour les trajets
+                  info.el.title = `Temps de trajet: ${info.event.extendedProps.travelTime}\nDe: ${info.event.extendedProps.fromAddress}\nVers: ${info.event.extendedProps.toAddress}`;
+                  
+                  // Effet hover
+                  info.el.style.cursor = 'help';
+                  info.el.addEventListener('mouseenter', () => {
+                    info.el.style.backgroundColor = '#00ff99';
+                    info.el.style.transform = 'scale(1.05)';
+                    info.el.style.transition = 'all 0.2s ease';
+                  });
+                  info.el.addEventListener('mouseleave', () => {
+                    info.el.style.backgroundColor = '#00ff88';
+                    info.el.style.transform = 'scale(1)';
+                  });
+                } else {
+                  // Gestion des événements normaux
+                  if (info.event.extendedProps.nonPlanifiable) {
+                    info.el.classList.add('non-planifiable');
+                    info.el.style.opacity = '0.8';
+                    info.el.style.borderLeft = '4px solid #f59e0b';
+                  }
                 }
               }}
               view={currentView}
