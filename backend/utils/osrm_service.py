@@ -84,7 +84,7 @@ class OSRMService:
                     logger.info(f"📊 Progression OSRM: {calculated}/{total_routes} ({percentage:.1f}%)")
                 
                 # Délai pour ne pas surcharger l'API gratuite
-                await asyncio.sleep(0.1)  # 100ms entre chaque requête
+                await asyncio.sleep(0.05)  # 50ms entre chaque requête (au lieu de 100ms)
         
         logger.info(f"✅ OSRM: Terminé - {calculated} trajets calculés")
         return results
