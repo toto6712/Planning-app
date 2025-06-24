@@ -181,17 +181,65 @@ backend:
         -comment: "Le parser CSV fonctionne correctement. Il valide les colonnes requises, gère les intervenants imposés et vérifie les formats de date. Les tests avec les fichiers CSV fournis ont réussi."
 
 frontend:
-  - task: "Interface Utilisateur"
+  - task: "Chargement Initial"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         -working: "NA"
         -agent: "testing"
-        -comment: "Le frontend n'a pas été testé dans le cadre de cette évaluation, qui se concentrait uniquement sur le backend."
+        -comment: "Vérification du chargement initial de l'application, affichage du header et des étapes de progression."
+
+  - task: "Interface Upload CSV"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/CSVUpload.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Vérification de l'interface d'upload des fichiers CSV, instructions et bouton de génération."
+
+  - task: "Affichage Calendrier"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/CalendarView.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Vérification de l'affichage du calendrier FullCalendar avec les différentes vues et la légende."
+
+  - task: "Boutons Export"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/ExportButtons.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Vérification des boutons d'export PDF et CSV et de l'affichage du résumé de planning."
+
+  - task: "Responsive Design"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Vérification de l'affichage sur différentes tailles d'écran et des animations."
 
 metadata:
   created_by: "testing_agent"
