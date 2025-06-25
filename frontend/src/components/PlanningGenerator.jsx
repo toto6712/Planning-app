@@ -307,14 +307,63 @@ const PlanningGenerator = ({ interventionsFile, intervenantsFile, onPlanningGene
           </div>
         </div>
 
-        {/* Progression */}
+        {/* Progression enrichie */}
         {processing && (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {/* Header de progression avec timer */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-purple-900">{currentStep}</span>
-              <span className="text-sm text-purple-700">{progress}%</span>
+              <div className="flex items-center gap-2">
+                {getStepIcon(currentStep)}
+                <span className="text-sm font-medium text-purple-900">{currentStep}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Clock className="h-4 w-4 text-purple-600" />
+                <span className="text-sm text-purple-700 font-mono">{formatTime(elapsedTime)}</span>
+                <span className="text-sm text-purple-700">{progress}%</span>
+              </div>
             </div>
-            <Progress value={progress} className="h-2" />
+            
+            {/* Barre de progression principale */}
+            <Progress value={progress} className="h-3" />
+            
+            {/* Détail de l'étape */}
+            {detailedStep && (
+              <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                <div className="flex items-center gap-2 text-sm text-purple-800">
+                  <Activity className="h-4 w-4 animate-pulse" />
+                  <span>{detailedStep}</span>
+                </div>
+                
+                {/* Statistiques temps réel */}
+                {stepStats && (
+                  <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                    {Object.entries(stepStats).map(([key, value], index) => (
+                      <div key={index} className="flex items-center gap-1 text-purple-700">
+                        <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                        <span className="capitalize">{key}:</span>
+                        <span className="font-mono">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Indicateur OSRM Local */}
+            {currentStep.includes('OSRM') && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium text-green-800">OSRM Local Ultra-Rapide</span>
+                  <Badge variant="outline" className="text-green-700 border-green-300">
+                    50-100x plus rapide
+                  </Badge>
+                </div>
+                <p className="text-xs text-green-700 mt-1">
+                  Calculs parallèles sur serveur local - Performance optimale
+                </p>
+              </div>
+            )}
           </div>
         )}
 
