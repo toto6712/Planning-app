@@ -37,19 +37,31 @@ async def upload_and_process_csv(
         interventions_content = await interventions_file.read()
         intervenants_content = await intervenants_file.read()
         
+        logger.info(f"📊 ÉTAPE 1/5 - PARSING CSV")
+        logger.info(f"📄 Traitement de {interventions_file.filename} ({len(interventions_content)} bytes)")
+        logger.info(f"📄 Traitement de {intervenants_file.filename} ({len(intervenants_content)} bytes)")
+        
         # Parser les CSV
         try:
+            logger.info("🔄 Parsing interventions.csv en cours...")
             interventions = parse_interventions_csv(interventions_content)
+            logger.info(f"✅ Interventions parsées: {len(interventions)} lignes valides")
+            
+            logger.info("🔄 Parsing intervenants.csv en cours...")
             intervenants = parse_intervenants_csv(intervenants_content)
+            logger.info(f"✅ Intervenants parsés: {len(intervenants)} lignes valides")
         except ValueError as e:
             raise HTTPException(400, f"Erreur parsing CSV: {str(e)}")
         
+        logger.info(f"📊 ÉTAPE 2/5 - VALIDATION DES DONNÉES")
         # Valider les données
         is_valid, validation_message = validate_csv_data(interventions, intervenants)
         if not is_valid:
             raise HTTPException(400, f"Données invalides: {validation_message}")
         
-        logger.info(f"Données validées: {len(interventions)} interventions, {len(intervenants)} intervenants")
+        logger.info(f"✅ Validation réussie: {len(interventions)} interventions, {len(intervenants)} intervenants")
+        
+        logger.info(f"📊 ÉTAPE 3/5 - GÉNÉRATION PLANNING IA")
         
         # Générer le planning avec OpenAI
         try:
