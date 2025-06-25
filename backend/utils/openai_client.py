@@ -4,11 +4,9 @@ import logging
 import os
 import asyncio
 from typing import List, Dict, Any
-from ..models import Intervention, Intervenant, PlanningEvent
-from .planning_validator import planning_validator
-from .geocoding import geocoding_service
-from .travel_cache_service import travel_cache_service
-from .osrm_service import osrm_service
+from models import Intervention, Intervenant, PlanningEvent
+from utils.planning_validator import planning_validator
+from utils.travel_cache_service import travel_cache_service
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
