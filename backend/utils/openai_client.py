@@ -33,33 +33,55 @@ class OpenAIClient:
 
     async def get_travel_times_with_cache(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
         """Récupère les temps de trajet avec calcul automatique des manquants"""
-        logger.info("🗂️ RÉCUPÉRATION des temps de trajet avec cache automatique")
+        import time
+        start_time = time.time()
+        
+        logger.info("🗂️ === DÉBUT RÉCUPÉRATION TEMPS DE TRAJET ===")
         
         # Collecter TOUTES les coordonnées
+        logger.info("🔄 Collecte des coordonnées...")
         all_coordinates = set()
         
         # Coordonnées des intervenants
-        for intervenant in intervenants:
+        for i, intervenant in enumerate(intervenants, 1):
             all_coordinates.add((intervenant.latitude, intervenant.longitude))
-            logger.debug(f"Coordonnées intervenant: {intervenant.nom_prenom} -> ({intervenant.latitude:.4f},{intervenant.longitude:.4f})")
+            logger.debug(f"   Intervenant {i}/{len(intervenants)}: {intervenant.nom_prenom} -> ({intervenant.latitude:.4f},{intervenant.longitude:.4f})")
         
         # Coordonnées des interventions
-        for intervention in interventions:
+        for i, intervention in enumerate(interventions, 1):
             all_coordinates.add((intervention.latitude, intervention.longitude))
-            logger.debug(f"Coordonnées intervention: {intervention.client} -> ({intervention.latitude:.4f},{intervention.longitude:.4f})")
+            logger.debug(f"   Intervention {i}/{len(interventions)}: {intervention.client} -> ({intervention.latitude:.4f},{intervention.longitude:.4f})")
         
-        logger.info(f"📍 {len(all_coordinates)} coordonnées uniques trouvées")
+        total_coords = len(all_coordinates)
+        max_possible_routes = total_coords * (total_coords - 1)
+        logger.info(f"📍 Coordonnées collectées: {total_coords} uniques")
+        logger.info(f"🔢 Trajets théoriques maximum: {max_possible_routes}")
         
         # Calcul automatique des trajets manquants
+        logger.info("🔄 Vérification du cache et calcul des trajets manquants...")
+        calculation_start = time.time()
         calculated_count = await travel_cache_service.calculate_and_cache_missing_routes(all_coordinates)
+        calculation_time = time.time() - calculation_start
         
         if calculated_count > 0:
-            logger.info(f"✅ {calculated_count} nouveaux trajets calculés et mis en cache")
+            logger.info(f"⚡ Performance: {calculated_count} trajets calculés en {calculation_time:.2f}s")
+            logger.info(f"📊 Vitesse: {calculated_count/calculation_time:.1f} trajets/seconde")
+        else:
+            logger.info(f"✅ Tous les trajets étaient déjà en cache")
         
         # Récupérer tous les temps de trajet depuis le cache (maintenant complet)
+        logger.info("🔄 Récupération des temps de trajet depuis le cache...")
         travel_times = travel_cache_service.get_cached_travel_times(all_coordinates)
         
-        logger.info(f"✅ TOUS les trajets récupérés depuis le cache ({len(travel_times)} adresses)")
+        total_time = time.time() - start_time
+        actual_routes = sum(len(routes) for routes in travel_times.values())
+        
+        logger.info(f"✅ === RÉCUPÉRATION TERMINÉE ===")
+        logger.info(f"📊 Résumé:")
+        logger.info(f"   • Coordonnées uniques: {total_coords}")
+        logger.info(f"   • Trajets disponibles: {actual_routes}")
+        logger.info(f"   • Nouveaux calculs: {calculated_count}")
+        logger.info(f"   • Temps total: {total_time:.2f}s")
         return travel_times
         
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
