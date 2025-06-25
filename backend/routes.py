@@ -65,10 +65,13 @@ async def upload_and_process_csv(
         
         # Générer le planning avec OpenAI
         try:
+            logger.info("🤖 Lancement de la génération de planning par IA...")
             planning_events = await openai_client.generate_planning(interventions, intervenants)
+            logger.info(f"✅ Planning IA généré avec {len(planning_events)} événements")
         except ValueError as e:
             raise HTTPException(500, f"Erreur génération planning IA: {str(e)}")
         
+        logger.info(f"📊 ÉTAPE 4/5 - CALCUL DES STATISTIQUES")
         # Calculer les statistiques
         stats_data = openai_client.calculate_stats(
             planning_events, 
@@ -77,7 +80,14 @@ async def upload_and_process_csv(
         )
         stats = PlanningStats(**stats_data)
         
-        logger.info(f"Planning généré avec succès: {len(planning_events)} événements")
+        logger.info(f"📊 ÉTAPE 5/5 - FINALISATION")
+        logger.info(f"📈 Statistiques finales:")
+        logger.info(f"   • Total interventions: {stats.total_interventions}")
+        logger.info(f"   • Interventions planifiées: {stats.interventions_planifiees}")
+        logger.info(f"   • Taux de planification: {stats.taux_planification}%")
+        logger.info(f"   • Intervenants utilisés: {stats.intervenants}")
+        
+        logger.info(f"🎉 SUCCÈS COMPLET - Planning généré avec succès!")
         
         return PlanningResponse(
             success=True,
