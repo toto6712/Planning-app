@@ -6,14 +6,14 @@ import os
 import logging
 from datetime import datetime
 
-from .models import (
+from models import (
     PlanningResponse, FileUploadResponse, ExportResponse,
     PlanningStats, PlanningEvent
 )
-from .utils.csv_parser import parse_interventions_csv, parse_intervenants_csv, validate_csv_data
-from .utils.openai_client import openai_client
-from .utils.export_service import export_service
-from .utils.travel_cache_service import travel_cache_service
+from utils.csv_parser import parse_interventions_csv, parse_intervenants_csv, validate_csv_data
+from utils.openai_client import openai_client
+from utils.export_service import export_service
+from utils.travel_cache_service import travel_cache_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
