@@ -60,10 +60,16 @@ class OSRMService:
     
     async def calculate_multiple_routes_parallel(self, coordinates: list) -> dict:
         """Calcule tous les trajets entre une liste de coordonnées en parallèle (OSRM local ultra-rapide)"""
+        import time
+        
         results = {}
         route_tasks = []
         
+        logger.info(f"🚀 === OSRM LOCAL PARALLÈLE DÉMARRÉ ===")
+        start_time = time.time()
+        
         # Préparer tous les calculs
+        prep_start = time.time()
         for i, (lat1, lon1) in enumerate(coordinates):
             coord1_key = f"{lat1},{lon1}"
             results[coord1_key] = {}
@@ -77,38 +83,82 @@ class OSRMService:
                     task = self.calculate_travel_time(lat1, lon1, lat2, lon2)
                     route_tasks.append((task, coord1_key, coord2_key))
         
+        prep_time = time.time() - prep_start
         total_routes = len(route_tasks)
-        logger.info(f"🚀 OSRM LOCAL PARALLÈLE: Calcul de {total_routes} trajets")
+        
+        logger.info(f"📊 Préparation terminée en {prep_time:.3f}s")
+        logger.info(f"🔢 Total à calculer: {total_routes} trajets")
+        logger.info(f"⚡ Parallélisme: {self.max_concurrent_requests} requêtes simultanées")
         
         # Exécuter par lots pour éviter la surcharge
         batch_size = self.max_concurrent_requests
         completed = 0
+        calculation_times = []
         
-        for i in range(0, len(route_tasks), batch_size):
+        for batch_num, i in enumerate(range(0, len(route_tasks), batch_size), 1):
             batch = route_tasks[i:i + batch_size]
+            batch_start = time.time()
+            
+            logger.info(f"🔄 Lot {batch_num}/{(len(route_tasks) + batch_size - 1) // batch_size}")
+            logger.info(f"   📦 Trajets dans ce lot: {len(batch)}")
+            
             batch_tasks = [task for task, _, _ in batch]
             
             # Exécuter le lot en parallèle
-            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-            
-            # Traiter les résultats du lot
-            for j, (task, coord1_key, coord2_key) in enumerate(batch):
-                try:
-                    travel_time = batch_results[j]
-                    if isinstance(travel_time, Exception):
-                        travel_time = 15  # Fallback en cas d'erreur
-                    results[coord1_key][coord2_key] = travel_time
-                    completed += 1
-                except Exception as e:
-                    logger.error(f"Erreur traitement résultat: {str(e)}")
+            try:
+                batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+                batch_time = time.time() - batch_start
+                calculation_times.append(batch_time)
+                
+                # Traiter les résultats du lot
+                for j, (task, coord1_key, coord2_key) in enumerate(batch):
+                    try:
+                        travel_time = batch_results[j]
+                        if isinstance(travel_time, Exception):
+                            logger.warning(f"   ⚠️ Erreur trajet {coord1_key} -> {coord2_key}: {travel_time}")
+                            travel_time = 15  # Fallback en cas d'erreur
+                        results[coord1_key][coord2_key] = travel_time
+                        completed += 1
+                    except Exception as e:
+                        logger.error(f"   ❌ Erreur traitement résultat: {str(e)}")
+                        results[coord1_key][coord2_key] = 15
+                        completed += 1
+                
+                # Statistiques du lot
+                percentage = (completed / total_routes) * 100
+                avg_time_per_route = batch_time / len(batch) if len(batch) > 0 else 0
+                
+                logger.info(f"   ✅ Lot terminé en {batch_time:.2f}s")
+                logger.info(f"   ⚡ {avg_time_per_route*1000:.1f}ms par trajet")
+                logger.info(f"   📊 Progression globale: {completed}/{total_routes} ({percentage:.1f}%)")
+                
+                # Estimation du temps restant
+                if completed > 0 and completed < total_routes:
+                    avg_batch_time = sum(calculation_times) / len(calculation_times)
+                    remaining_batches = (total_routes - completed + batch_size - 1) // batch_size
+                    eta = remaining_batches * avg_batch_time
+                    logger.info(f"   ⏱️ Temps restant estimé: {eta:.1f}s")
+                    
+            except Exception as e:
+                logger.error(f"❌ Erreur lors du traitement du lot {batch_num}: {str(e)}")
+                # Marquer tous les trajets du lot comme échoués
+                for task, coord1_key, coord2_key in batch:
                     results[coord1_key][coord2_key] = 15
                     completed += 1
-            
-            # Log de progression
-            percentage = (completed / total_routes) * 100
-            logger.info(f"📊 Progression OSRM LOCAL: {completed}/{total_routes} ({percentage:.1f}%)")
         
-        logger.info(f"✅ OSRM LOCAL PARALLÈLE: Terminé - {completed} trajets calculés")
+        total_time = time.time() - start_time
+        
+        logger.info(f"✅ === OSRM LOCAL PARALLÈLE TERMINÉ ===")
+        logger.info(f"📊 Statistiques finales:")
+        logger.info(f"   • Trajets calculés: {completed}")
+        logger.info(f"   • Temps total: {total_time:.2f}s")
+        logger.info(f"   • Vitesse moyenne: {completed/total_time:.1f} trajets/seconde")
+        logger.info(f"   • Temps moyen par trajet: {total_time/completed*1000:.1f}ms")
+        
+        if calculation_times:
+            avg_batch_time = sum(calculation_times) / len(calculation_times)
+            logger.info(f"   • Temps moyen par lot: {avg_batch_time:.2f}s")
+        
         return results
 
     async def calculate_multiple_routes(self, coordinates: list) -> dict:
