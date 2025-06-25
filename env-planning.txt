@@ -1,0 +1,4 @@
+# .env principal à ajouter/modifier
+# Vos variables existantes + celle-ci :
+
+OPENAI_API_KEY=sk-your-openai-api-key-here
