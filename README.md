@@ -80,7 +80,7 @@ planning-avs/
 
 ## 🌐 URLs
 
-- **Application** : https://planning.avs-autonomie.fr
+- **Application** : https://planning-avs-autonomie.fr
 - **API** : https://api.avs-autonomie.fr/api/health
 
 ## 📊 Format CSV Attendu
