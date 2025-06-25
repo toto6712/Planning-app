@@ -3,7 +3,7 @@ import csv
 import io
 import json
 from typing import List
-from ..models import PlanningEvent, PlanningStats
+from models import PlanningEvent, PlanningStats
 import logging
 from datetime import datetime
 
