@@ -22,7 +22,7 @@ services:
       - "traefik.http.routers.planning-api.tls=true"
       - "traefik.http.routers.planning-api.tls.certresolver=mytlschallenge"
       - "traefik.http.services.planning-api.loadbalancer.server.port=8001"
-      - "traefik.http.middlewares.planning-cors.headers.accessControlAllowOriginList=https://planning.avs-autonomie.fr"
+      - "traefik.http.middlewares.planning-cors.headers.accessControlAllowOriginList=https://planning-avs-autonomie.fr"
       - "traefik.http.middlewares.planning-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,OPTIONS"
       - "traefik.http.middlewares.planning-cors.headers.accessControlAllowHeaders=*"
       - "traefik.http.routers.planning-api.middlewares=planning-cors"
@@ -44,7 +44,7 @@ services:
       - avs-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.planning-web.rule=Host(`planning.avs-autonomie.fr`)"
+      - "traefik.http.routers.planning-web.rule=Host(`planning-avs-autonomie.fr`)"
       - "traefik.http.routers.planning-web.entrypoints=websecure"
       - "traefik.http.routers.planning-web.tls=true"
       - "traefik.http.routers.planning-web.tls.certresolver=mytlschallenge"
