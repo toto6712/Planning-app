@@ -15,19 +15,19 @@ class OSRMService:
         self.max_concurrent_requests = 20  # Nombre de requêtes parallèles
         
     async def calculate_travel_time(self, lat1: float, lon1: float, lat2: float, lon2: float) -> int:
-        """Calcule le temps de trajet en minutes entre deux points via OSRM"""
+        """Calcule le temps de trajet en minutes entre deux points via OSRM local"""
         try:
             # Format de l'URL OSRM: /route/v1/driving/lon1,lat1;lon2,lat2
             url = f"{self.base_url}/{lon1},{lat1};{lon2},{lat2}"
             
-            # Paramètres pour obtenir la durée
+            # Paramètres optimisés pour OSRM local
             params = {
-                "overview": "false",  # Pas besoin de la géométrie complète
-                "steps": "false",     # Pas besoin des étapes détaillées
-                "geometries": "polyline"
+                "overview": "false",  # Pas besoin de la géométrie
+                "steps": "false",     # Pas besoin des étapes
+                "geometries": "geojson"  # Plus rapide que polyline
             }
             
-            logger.debug(f"🗺️ OSRM: Calcul trajet ({lat1:.6f},{lon1:.6f}) → ({lat2:.6f},{lon2:.6f})")
+            logger.debug(f"🗺️ OSRM LOCAL: ({lat1:.6f},{lon1:.6f}) → ({lat2:.6f},{lon2:.6f})")
             
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(url, params=params)
@@ -40,21 +40,21 @@ class OSRMService:
                         duration_seconds = data["routes"][0]["duration"]
                         duration_minutes = max(1, round(duration_seconds / 60))
                         
-                        logger.info(f"✅ OSRM: {duration_minutes} min ({lat1:.4f},{lon1:.4f}) → ({lat2:.4f},{lon2:.4f})")
+                        logger.debug(f"✅ OSRM LOCAL: {duration_minutes} min")
                         return duration_minutes
                     else:
                         error_msg = data.get("message", "Route non trouvée")
-                        logger.warning(f"⚠️ OSRM: Pas de route - {error_msg}")
+                        logger.warning(f"⚠️ OSRM LOCAL: Pas de route - {error_msg}")
                         return 15  # Fallback 15 minutes
                 else:
-                    logger.error(f"❌ OSRM: Erreur HTTP {response.status_code}")
+                    logger.error(f"❌ OSRM LOCAL: Erreur HTTP {response.status_code}")
                     return 15  # Fallback 15 minutes
                     
         except asyncio.TimeoutError:
-            logger.error(f"⏱️ OSRM: Timeout après {self.timeout}s")
+            logger.error(f"⏱️ OSRM LOCAL: Timeout après {self.timeout}s")
             return 15  # Fallback 15 minutes
         except Exception as e:
-            logger.error(f"❌ OSRM: Erreur {str(e)}")
+            logger.error(f"❌ OSRM LOCAL: Erreur {str(e)}")
             return 15  # Fallback 15 minutes
     
     async def calculate_multiple_routes(self, coordinates: list) -> dict:
