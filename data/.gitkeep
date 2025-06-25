@@ -1,5 +1,0 @@
-lat_depart,lon_depart,lat_arrivee,lon_arrivee,temps_minutes,date_calcul
-# Ce fichier sera automatiquement généré lors des premiers calculs OSRM
-# Format: latitude_départ, longitude_départ, latitude_arrivée, longitude_arrivée, temps_minutes, date_calcul
-# Exemple:
-# 48.5734,7.7521,48.5856,7.7507,12,2024-06-24 10:30:00
