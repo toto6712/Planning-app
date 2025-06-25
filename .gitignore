@@ -1,80 +1,53 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Logs et fichiers temporaires
+*.log
+*.tmp
+*.cache
 
-# IDE and editors
-.idea/
-.vscode/
-
-# Dependencies
-node_modules/
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-next-env.d.ts
-*.tsbuildinfo
-
-# Production builds
-/build
-dist/
-dist
-
-# Environment files (comprehensive coverage)
-
-*token.json*
-*credentials.json*
-
-# Logs and debug files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-dump.rdb
-
-# System files
-.DS_Store
-*.pem
+# Environnement
+.env
+*.env
+!.env.example
 
 # Python
 __pycache__/
-*pyc*
-venv/
-.venv/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
 
-# Development tools
-chainlit.md
-.chainlit
-.ipynb_checkpoints/
-.ac
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
 
-# Deployment
-.vercel
+# React
+/build
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Data and databases
-agenthub/agents/youtube/db
+# Docker
+.dockerignore
 
-# Archive files and large assets
-**/*.zip
-**/*.tar.gz
-**/*.tar
-**/*.tgz
-*.pack
-*.deb
-*.dylib
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Build caches
-.cache/
+# OS
+.DS_Store
+Thumbs.db
 
-# Mobile development
-android-sdk/ 
+# Données sensibles
+data/travel_times_cache.csv
+*.csv
+!*example*.csv
+
+# Backups
+*.backup
+*.bak
