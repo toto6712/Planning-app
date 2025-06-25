@@ -261,11 +261,14 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
         if intervenant_col:
             logger.info(f"Colonne intervenant trouvée: {intervenant_col}")
         
-        logger.info(f"Début du parsing de {len(df)} lignes")
+        logger.info(f"📊 PARSING INTERVENTIONS - {len(df)} lignes détectées")
         
         interventions = []
         for index, row in df.iterrows():
             try:
+                if (index + 1) % 5 == 0:  # Log tous les 5 lignes
+                    logger.info(f"   🔄 Traitement ligne {index + 1}/{len(df)}")
+                
                 logger.debug(f"Traitement ligne {index + 2}: {dict(row)}")
                 
                 # Vérifier que les colonnes critiques ne sont pas vides
@@ -286,7 +289,7 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                     client.lower() in ['nan', ''] or 
                     date.lower() in ['nan', ''] or
                     duree.lower() in ['nan', '']):
-                    logger.warning(f"Ligne {index + 2} ignorée : données manquantes critiques")
+                    logger.warning(f"   ⚠️ Ligne {index + 2} ignorée : données manquantes critiques")
                     continue
                 
                 # Valider les coordonnées
@@ -298,15 +301,15 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
                     lat = float(lat_str)
                     lon = float(lon_str)
                     
-                    logger.info(f"Ligne {index + 2}: Coordonnées validées - lat={lat}, lon={lon}")
+                    logger.debug(f"   ✅ Ligne {index + 2}: Coordonnées validées - lat={lat}, lon={lon}")
                     
                     # Vérifier que les coordonnées sont valides
                     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
-                        logger.warning(f"Ligne {index + 2} ignorée : coordonnées invalides ({lat}, {lon})")
+                        logger.warning(f"   ❌ Ligne {index + 2} ignorée : coordonnées invalides ({lat}, {lon})")
                         continue
                         
                 except (ValueError, TypeError) as e:
-                    logger.warning(f"Ligne {index + 2} ignorée : coordonnées non numériques - latitude='{latitude}', longitude='{longitude}', error={str(e)}")
+                    logger.warning(f"   ❌ Ligne {index + 2} ignorée : coordonnées non numériques - latitude='{latitude}', longitude='{longitude}', error={str(e)}")
                     continue
                 
                 # Récupérer l'intervenant (peut être vide)
