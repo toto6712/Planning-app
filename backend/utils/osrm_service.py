@@ -57,38 +57,64 @@ class OSRMService:
             logger.error(f"❌ OSRM LOCAL: Erreur {str(e)}")
             return 15  # Fallback 15 minutes
     
-    async def calculate_multiple_routes(self, coordinates: list) -> dict:
-        """Calcule tous les trajets entre une liste de coordonnées"""
+    
+    async def calculate_multiple_routes_parallel(self, coordinates: list) -> dict:
+        """Calcule tous les trajets entre une liste de coordonnées en parallèle (OSRM local ultra-rapide)"""
         results = {}
-        total_routes = len(coordinates) * (len(coordinates) - 1)
-        calculated = 0
+        route_tasks = []
         
-        logger.info(f"🚀 OSRM: Calcul de {total_routes} trajets via OSRM")
-        
+        # Préparer tous les calculs
         for i, (lat1, lon1) in enumerate(coordinates):
             coord1_key = f"{lat1},{lon1}"
             results[coord1_key] = {}
             
             for j, (lat2, lon2) in enumerate(coordinates):
+                coord2_key = f"{lat2},{lon2}"
                 if i == j:
-                    results[coord1_key][f"{lat2},{lon2}"] = 0  # Même point
-                    continue
-                
-                # Calcul du trajet
-                travel_time = await self.calculate_travel_time(lat1, lon1, lat2, lon2)
-                results[coord1_key][f"{lat2},{lon2}"] = travel_time
-                calculated += 1
-                
-                # Log de progression tous les 10 calculs
-                if calculated % 10 == 0:
-                    percentage = (calculated / total_routes) * 100
-                    logger.info(f"📊 Progression OSRM: {calculated}/{total_routes} ({percentage:.1f}%)")
-                
-                # Délai pour ne pas surcharger l'API gratuite
-                await asyncio.sleep(0.05)  # 50ms entre chaque requête (au lieu de 100ms)
+                    results[coord1_key][coord2_key] = 0  # Même point
+                else:
+                    # Créer une tâche asynchrone pour chaque calcul
+                    task = self.calculate_travel_time(lat1, lon1, lat2, lon2)
+                    route_tasks.append((task, coord1_key, coord2_key))
         
-        logger.info(f"✅ OSRM: Terminé - {calculated} trajets calculés")
+        total_routes = len(route_tasks)
+        logger.info(f"🚀 OSRM LOCAL PARALLÈLE: Calcul de {total_routes} trajets")
+        
+        # Exécuter par lots pour éviter la surcharge
+        batch_size = self.max_concurrent_requests
+        completed = 0
+        
+        for i in range(0, len(route_tasks), batch_size):
+            batch = route_tasks[i:i + batch_size]
+            batch_tasks = [task for task, _, _ in batch]
+            
+            # Exécuter le lot en parallèle
+            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+            
+            # Traiter les résultats du lot
+            for j, (task, coord1_key, coord2_key) in enumerate(batch):
+                try:
+                    travel_time = batch_results[j]
+                    if isinstance(travel_time, Exception):
+                        travel_time = 15  # Fallback en cas d'erreur
+                    results[coord1_key][coord2_key] = travel_time
+                    completed += 1
+                except Exception as e:
+                    logger.error(f"Erreur traitement résultat: {str(e)}")
+                    results[coord1_key][coord2_key] = 15
+                    completed += 1
+            
+            # Log de progression
+            percentage = (completed / total_routes) * 100
+            logger.info(f"📊 Progression OSRM LOCAL: {completed}/{total_routes} ({percentage:.1f}%)")
+        
+        logger.info(f"✅ OSRM LOCAL PARALLÈLE: Terminé - {completed} trajets calculés")
         return results
+
+    async def calculate_multiple_routes(self, coordinates: list) -> dict:
+        """Calcule tous les trajets entre une liste de coordonnées (mode séquentiel pour compatibilité)"""
+        # Utiliser la version parallèle qui est beaucoup plus rapide avec OSRM local
+        return await self.calculate_multiple_routes_parallel(coordinates)
     
     def coordinates_to_key(self, lat: float, lon: float) -> str:
         """Convertit des coordonnées en clé pour le cache"""
