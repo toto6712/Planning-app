@@ -39,8 +39,8 @@ nano backend/.env
 ### 3. DNS (Important)
 Configurez vos domaines pour pointer vers votre VPS :
 ```
-api.avs-autonomie.fr       →  VOTRE_IP_VPS
-planning.avs-autonomie.fr  →  VOTRE_IP_VPS
+api.avs-autonomie.fr           →  VOTRE_IP_VPS
+planning-avs-autonomie.fr      →  VOTRE_IP_VPS
 ```
 
 ### 4. Déploiement
