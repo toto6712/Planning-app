@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 
 # Configuration
-BACKEND_URL = "https://b263207e-5c0d-4840-a454-960de473501f.preview.emergentagent.com"
+BACKEND_URL = "https://9ad5c0eb-adea-4b40-9912-e17900ac2901.preview.emergentagent.com"
 API_BASE_URL = f"{BACKEND_URL}/api"
 
 # Test files
