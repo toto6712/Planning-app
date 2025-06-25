@@ -1,21 +1,14 @@
-from fastapi import FastAPI
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
-# Import our routes
 from .routes import router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
-
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
 
 # Create the main app
 app = FastAPI(
@@ -30,13 +23,13 @@ app.include_router(router)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["*"],  # En production, spécifier les domaines
     allow_credentials=True,
-    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
+# Logging setup
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -45,9 +38,8 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Planning Tournées API démarrée")
+    logger.info("Planning Tournées API démarrée - Mode fichiers CSV")
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
-    logger.info("Connexion MongoDB fermée")
+async def shutdown_event():
+    logger.info("API Planning Tournées fermée")
