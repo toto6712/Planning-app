@@ -361,7 +361,10 @@ def parse_interventions_csv(file_content: bytes) -> List[Intervention]:
         if not interventions:
             raise ValueError("Aucune intervention valide trouvée dans le fichier")
         
-        logger.info(f"Parsed {len(interventions)} interventions valides")
+        logger.info(f"✅ PARSING INTERVENTIONS TERMINÉ")
+        logger.info(f"   • Lignes traitées: {len(df)}")
+        logger.info(f"   • Interventions valides: {len(interventions)}")
+        logger.info(f"   • Taux de succès: {len(interventions)/len(df)*100:.1f}%")
         return interventions
         
     except Exception as e:
