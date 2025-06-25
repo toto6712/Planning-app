@@ -86,11 +86,22 @@ class OpenAIClient:
         
     async def generate_planning(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> List[PlanningEvent]:
         """Génère un planning optimisé via OpenAI avec calcul automatique des trajets"""
+        import time
+        total_start_time = time.time()
+        
         try:
-            logger.info("🚀 DÉBUT génération planning avec calcul automatique des trajets")
+            logger.info("🚀 === DÉBUT GÉNÉRATION PLANNING IA ===")
             
             # RÉCUPÉRER LES TEMPS DE TRAJET AVEC CALCUL AUTOMATIQUE
+            logger.info("📍 Phase 1/4 - Récupération des temps de trajet")
+            travel_times_start = time.time()
             travel_times = await self.get_travel_times_with_cache(interventions, intervenants)
+            travel_times_duration = time.time() - travel_times_start
+            logger.info(f"✅ Phase 1/4 terminée en {travel_times_duration:.2f}s")
+            
+            # PRÉPARATION DES DONNÉES POUR L'IA
+            logger.info("🔧 Phase 2/4 - Préparation des données pour l'IA")
+            prep_start = time.time()
             
             # Générer la palette de couleurs pour les intervenants
             color_palette = [
@@ -100,35 +111,37 @@ class OpenAIClient:
             
             # Créer un mapping couleur pour chaque intervenant (en évitant les doublons)
             intervenant_colors = {}
-            noms_uniques = list(set(intervenant.nom_prenom for intervenant in intervenants))  # Éliminer les doublons potentiels
+            noms_uniques = list(set(intervenant.nom_prenom for intervenant in intervenants))
             for i, nom in enumerate(noms_uniques):
                 intervenant_colors[nom] = color_palette[i % len(color_palette)]
             
-            logger.info(f"Couleurs assignées aux intervenants: {intervenant_colors}")
+            logger.info(f"🎨 Couleurs assignées: {len(intervenant_colors)} intervenants")
             
             # Préparer les données en format compact pour l'IA
             interventions_data = []
-            for i in interventions:
+            for i, intervention in enumerate(interventions, 1):
+                logger.debug(f"   Préparation intervention {i}/{len(interventions)}: {intervention.client}")
                 data = {
-                    "client": i.client,
-                    "date": i.date,
-                    "duree": i.duree,
-                    "latitude": i.latitude,
-                    "longitude": i.longitude,
-                    "secteur": i.secteur
+                    "client": intervention.client,
+                    "date": intervention.date,
+                    "duree": intervention.duree,
+                    "latitude": intervention.latitude,
+                    "longitude": intervention.longitude,
+                    "secteur": intervention.secteur
                 }
                 # N'ajouter l'intervenant que s'il est spécifié
-                if i.intervenant:
-                    data["intervenant_impose"] = i.intervenant
+                if intervention.intervenant:
+                    data["intervenant_impose"] = intervention.intervenant
                 # Ajouter les champs spéciaux
-                if i.binome:
+                if intervention.binome:
                     data["binome"] = True
-                if i.intervenant_referent:
-                    data["intervenant_referent"] = i.intervenant_referent
+                if intervention.intervenant_referent:
+                    data["intervenant_referent"] = intervention.intervenant_referent
                 interventions_data.append(data)
             
             intervenants_data = []
-            for i, intervenant in enumerate(intervenants):
+            for i, intervenant in enumerate(intervenants, 1):
+                logger.debug(f"   Préparation intervenant {i}/{len(intervenants)}: {intervenant.nom_prenom}")
                 data = {
                     "nom_prenom": intervenant.nom_prenom,
                     "latitude": intervenant.latitude,
@@ -152,7 +165,7 @@ class OpenAIClient:
 INTERVENANTS ({len(intervenants_data)} total):
 {json.dumps(intervenants_data, ensure_ascii=False)}
 
-TEMPS DE TRAJET CALCULÉS (OSRM - en minutes) - Format: "latitude,longitude" -> temps:
+TEMPS DE TRAJET CALCULÉS (OSRM LOCAL - en minutes) - Format: "latitude,longitude" -> temps:
 {json.dumps(travel_times, ensure_ascii=False)}
 
 RÈGLES CRITIQUES:
@@ -164,9 +177,18 @@ RÈGLES CRITIQUES:
 
 RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
             
-            logger.info(f"Envoi de {len(interventions_data)} interventions et {len(intervenants_data)} intervenants à OpenAI...")
-            logger.info(f"Taille du message: ~{len(user_message)} caractères")
+            prep_duration = time.time() - prep_start
+            logger.info(f"✅ Phase 2/4 terminée en {prep_duration:.2f}s")
+            logger.info(f"📏 Taille du message: {len(user_message):,} caractères")
             
+            # APPEL À L'IA OPENAI
+            logger.info("🤖 Phase 3/4 - Appel à l'IA OpenAI")
+            logger.info(f"📤 Envoi à GPT-4o-mini:")
+            logger.info(f"   • {len(interventions_data)} interventions")
+            logger.info(f"   • {len(intervenants_data)} intervenants") 
+            logger.info(f"   • {sum(len(routes) for routes in travel_times.values())} temps de trajet")
+            
+            ai_start = time.time()
             # Utiliser GPT-4o-mini qui a des limites plus élevées
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -177,11 +199,16 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                 temperature=0.05,  # Très faible pour cohérence maximale
                 max_tokens=4000
             )
+            ai_duration = time.time() - ai_start
             
             # Extraire la réponse
             planning_json = response.choices[0].message.content.strip()
-            logger.info(f"Réponse OpenAI reçue: {len(planning_json)} caractères")
-            logger.info(f"Début de la réponse: {planning_json[:200]}...")
+            logger.info(f"✅ Phase 3/4 terminée en {ai_duration:.2f}s")
+            logger.info(f"📥 Réponse reçue: {len(planning_json):,} caractères")
+            
+            # TRAITEMENT DE LA RÉPONSE IA
+            logger.info("🔍 Phase 4/4 - Traitement de la réponse IA")
+            processing_start = time.time()
             
             # Nettoyer et extraire le JSON
             try:
@@ -203,7 +230,7 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                 
                 if start_bracket >= 0 and end_bracket > start_bracket:
                     clean_json = planning_json[start_bracket:end_bracket + 1]
-                    logger.info(f"JSON extrait: {clean_json[:100]}...")
+                    logger.info(f"🧹 JSON nettoyé: {len(clean_json):,} caractères")
                     planning_data = json.loads(clean_json)
                 else:
                     # Si pas de crochets trouvés, essayer de parser directement
@@ -213,29 +240,29 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                         raise ValueError("Réponse OpenAI vide")
                         
             except json.JSONDecodeError as e:
-                logger.error(f"Erreur parsing JSON OpenAI: {str(e)}")
-                logger.error(f"Contenu complet reçu: {planning_json}")
+                logger.error(f"❌ Erreur parsing JSON OpenAI: {str(e)}")
+                logger.error(f"📋 Contenu complet reçu: {planning_json}")
                 
                 # Tentative de récupération en cas d'erreur
                 if not planning_json.strip():
                     raise ValueError("L'IA n'a pas retourné de réponse. Réessayez avec moins d'interventions ou vérifiez votre clé OpenAI.")
                 
                 # Essayer de générer un planning de base en cas d'échec total
-                logger.warning("Génération d'un planning de base en cas d'échec de l'IA")
+                logger.warning("🔄 Génération d'un planning de base en cas d'échec de l'IA")
                 planning_data = await self.generate_fallback_planning(interventions, intervenants, travel_times)
                 
             except Exception as e:
-                logger.error(f"Erreur inattendue lors du parsing: {str(e)}")
-                logger.error(f"Réponse complète: {planning_json}")
+                logger.error(f"❌ Erreur inattendue lors du parsing: {str(e)}")
+                logger.error(f"📋 Réponse complète: {planning_json}")
                 raise ValueError(f"Impossible de traiter la réponse de l'IA: {str(e)}")
             
             # Vérifier que planning_data est une liste
             if not isinstance(planning_data, list):
-                logger.error(f"Format de réponse invalide: {type(planning_data)}")
+                logger.error(f"❌ Format de réponse invalide: {type(planning_data)}")
                 raise ValueError("L'IA n'a pas retourné une liste d'interventions valide")
             
             if not planning_data:
-                logger.error("Liste d'interventions vide retournée par l'IA")
+                logger.error("❌ Liste d'interventions vide retournée par l'IA")
                 raise ValueError("L'IA n'a retourné aucune intervention planifiée")
             
             # Vérifier que toutes les interventions ont été traitées
@@ -244,8 +271,9 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
             
             # Convertir en objets PlanningEvent
             planning_events = []
-            for event_data in planning_data:
+            for i, event_data in enumerate(planning_data, 1):
                 try:
+                    logger.debug(f"   Traitement événement {i}/{len(planning_data)}: {event_data.get('client', 'N/A')}")
                     # Vérifier/corriger la couleur selon l'intervenant
                     intervenant_name = event_data.get('intervenant', '')
                     assigned_color = event_data.get('color', '#64748b')
@@ -268,15 +296,30 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                     )
                     planning_events.append(event)
                 except Exception as e:
-                    logger.error(f"Erreur création PlanningEvent: {str(e)}")
+                    logger.error(f"❌ Erreur création PlanningEvent {i}: {str(e)}")
                     continue
             
-            logger.info(f"Planning brut généré avec {len(planning_events)} événements")
+            processing_duration = time.time() - processing_start
+            logger.info(f"✅ Phase 4/4 terminée en {processing_duration:.2f}s")
+            logger.info(f"📋 Planning brut généré: {len(planning_events)} événements")
             
             # VALIDATION ET CORRECTION DES CONFLITS
+            logger.info("🔍 Validation finale et correction des conflits...")
+            validation_start = time.time()
             validated_planning = planning_validator.validate_and_fix_planning(planning_events)
+            validation_duration = time.time() - validation_start
             
-            logger.info(f"✅ Planning final validé avec {len(validated_planning)} événements")
+            total_duration = time.time() - total_start_time
+            
+            logger.info(f"✅ === GÉNÉRATION PLANNING TERMINÉE ===")
+            logger.info(f"📊 Résumé complet:")
+            logger.info(f"   • Temps de trajet: {travel_times_duration:.2f}s")
+            logger.info(f"   • Préparation IA: {prep_duration:.2f}s") 
+            logger.info(f"   • Appel OpenAI: {ai_duration:.2f}s")
+            logger.info(f"   • Traitement: {processing_duration:.2f}s")
+            logger.info(f"   • Validation: {validation_duration:.2f}s")
+            logger.info(f"   • TEMPS TOTAL: {total_duration:.2f}s")
+            logger.info(f"   • Événements finaux: {len(validated_planning)}")
             
             return validated_planning
             
