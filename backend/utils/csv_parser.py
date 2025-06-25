@@ -2,10 +2,10 @@ import pandas as pd
 import io
 import re
 from typing import List, Tuple
-from ..models import Intervention, Intervenant
+from models import Intervention, Intervenant
 import logging
 import chardet
-from .csv_cleaner import clean_csv_file
+from utils.csv_cleaner import clean_csv_file
 
 logger = logging.getLogger(__name__)
 
