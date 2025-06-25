@@ -1,17 +1,18 @@
 import asyncio
 import httpx
 import logging
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 logger = logging.getLogger(__name__)
 
 class OSRMService:
-    """Service pour calculer les temps de trajet via OSRM (OpenStreetMap Routing Machine)"""
+    """Service pour calculer les temps de trajet via OSRM local"""
     
     def __init__(self):
-        # Serveur OSRM public gratuit
-        self.base_url = "http://router.project-osrm.org/route/v1/driving"
-        self.timeout = 5  # secondes (plus rapide)
+        # Serveur OSRM local Docker
+        self.base_url = "http://localhost:5000/route/v1/driving"
+        self.timeout = 10  # secondes (généreux pour OSRM local)
+        self.max_concurrent_requests = 20  # Nombre de requêtes parallèles
         
     async def calculate_travel_time(self, lat1: float, lon1: float, lat2: float, lon2: float) -> int:
         """Calcule le temps de trajet en minutes entre deux points via OSRM"""
