@@ -454,11 +454,16 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         
         logger.info(f"Colonnes mappées: {column_mapping}")
         
+        logger.info(f"📊 PARSING INTERVENANTS - {len(df)} lignes détectées")
+        
         intervenants = []
         noms_vus = set()  # Pour détecter les doublons
         
         for index, row in df.iterrows():
             try:
+                if (index + 1) % 3 == 0:  # Log tous les 3 lignes
+                    logger.info(f"   🔄 Traitement ligne {index + 1}/{len(df)}")
+                    
                 # Vérifier que les colonnes critiques ne sont pas vides
                 nom = str(row[column_mapping['Nom_Prenom']]).strip()
                 latitude = row[column_mapping['Latitude']]
@@ -475,7 +480,7 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     nom.lower() in ['nan', ''] or 
                     temps_mensuel.lower() in ['nan', ''] or
                     temps_hebdo.lower() in ['nan', '']):
-                    logger.warning(f"Ligne {index + 2} ignorée : données manquantes critiques")
+                    logger.warning(f"   ⚠️ Ligne {index + 2} ignorée : données manquantes critiques")
                     continue
                 
                 # Valider les coordonnées
@@ -487,21 +492,21 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
                     lat = float(lat_str)
                     lon = float(lon_str)
                     
-                    logger.info(f"Ligne {index + 2}: Coordonnées validées - lat={lat}, lon={lon}")
+                    logger.debug(f"   ✅ Ligne {index + 2}: Coordonnées validées - lat={lat}, lon={lon}")
                     
                     # Vérifier que les coordonnées sont valides
                     if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
-                        logger.warning(f"Ligne {index + 2} ignorée : coordonnées invalides ({lat}, {lon})")
+                        logger.warning(f"   ❌ Ligne {index + 2} ignorée : coordonnées invalides ({lat}, {lon})")
                         continue
                         
                 except (ValueError, TypeError) as e:
-                    logger.warning(f"Ligne {index + 2} ignorée : coordonnées non numériques - latitude='{latitude}', longitude='{longitude}', error={str(e)}")
+                    logger.warning(f"   ❌ Ligne {index + 2} ignorée : coordonnées non numériques - latitude='{latitude}', longitude='{longitude}', error={str(e)}")
                     continue
                 
                 # Vérifier les doublons par nom (insensible à la casse)
                 nom_lower = nom.lower()
                 if nom_lower in noms_vus:
-                    logger.warning(f"Ligne {index + 2} ignorée : intervenant '{nom}' déjà présent (doublon détecté)")
+                    logger.warning(f"   🔄 Ligne {index + 2} ignorée : intervenant '{nom}' déjà présent (doublon détecté)")
                     continue
                 
                 # Détecter les spécialités et plages horaires spéciales
