@@ -1,4 +1,4 @@
-# 🚀 Configuration Docker Compose + Traefik HTTPS
+# 🚀 Configuration Docker Compose + Traefik HTTPS - AVS Autonomie
 
 ## 📋 Instructions d'Intégration
 
@@ -25,14 +25,21 @@
 └── traefik/                     # Votre config Traefik existante
 ```
 
-### 2. **Ajout dans votre docker-compose.yml**
+### 2. **Configuration DNS AVS Autonomie**
+Assurez-vous que ces sous-domaines pointent vers votre VPS :
+```
+planning.avs-autonomie.fr  →  IP_DE_VOTRE_VPS
+api.avs-autonomie.fr       →  IP_DE_VOTRE_VPS
+```
+
+### 3. **Ajout dans votre docker-compose.yml**
 ```yaml
 # Ajouter ces lignes dans votre docker-compose.yml existant
 
 services:
   # Vos services existants...
   
-  # === PLANNING SERVICES ===
+  # === PLANNING AVS AUTONOMIE ===
   planning-api:
     build:
       context: ./planning-app/backend
@@ -53,10 +60,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
-      - "traefik.http.routers.planning-api.rule=Host(\`votre-domaine.com\`) && PathPrefix(\`/api\`)"
+      - "traefik.http.routers.planning-api.rule=Host(\`api.avs-autonomie.fr\`)"
       - "traefik.http.routers.planning-api.entrypoints=websecure"
       - "traefik.http.routers.planning-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.planning-api.loadbalancer.server.port=8001"
+      - "traefik.http.middlewares.planning-api-cors.headers.accessControlAllowOriginList=https://planning.avs-autonomie.fr"
+      - "traefik.http.routers.planning-api.middlewares=planning-api-cors"
 
   planning-frontend:
     build:
@@ -64,7 +73,7 @@ services:
     container_name: planning-frontend
     restart: unless-stopped
     environment:
-      - REACT_APP_BACKEND_URL=https://votre-domaine.com
+      - REACT_APP_BACKEND_URL=https://api.avs-autonomie.fr
     depends_on:
       - planning-api
     networks:
@@ -72,7 +81,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
-      - "traefik.http.routers.planning-frontend.rule=Host(\`votre-domaine.com\`) && !PathPrefix(\`/api\`)"
+      - "traefik.http.routers.planning-frontend.rule=Host(\`planning.avs-autonomie.fr\`)"
       - "traefik.http.routers.planning-frontend.entrypoints=websecure"
       - "traefik.http.routers.planning-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.planning-frontend.loadbalancer.server.port=3000"
@@ -100,15 +109,27 @@ networks:
     driver: bridge
 ```
 
-### 3. **Variables d'Environnement (.env)**
+### 4. **Variables d'Environnement (.env)**
 ```env
 # Ajouter dans votre fichier .env
 OPENAI_API_KEY=sk-your-openai-api-key-here
-
-# Remplacer votre-domaine.com par votre vrai domaine
 ```
 
-### 4. **Commandes de Déploiement**
+### 5. **Fichier .env Frontend**
+```env
+# Dans planning-app/frontend/.env
+REACT_APP_BACKEND_URL=https://api.avs-autonomie.fr
+```
+
+### 6. **Fichier .env Backend**
+```env
+# Dans planning-app/backend/.env
+MONGO_URL=mongodb://planning-mongodb:27017/planning_db
+OPENAI_API_KEY=sk-your-openai-api-key-here
+DB_NAME=planning_db
+```
+
+### 7. **Commandes de Déploiement**
 ```bash
 # Sur votre VPS
 
@@ -128,16 +149,16 @@ docker-compose ps
 docker-compose logs -f planning-api
 ```
 
-## 🔧 **Configuration Spécifique**
+## 🔧 **Configuration Spécifique AVS**
 
-### **Routing Traefik Intelligent**
-- **Frontend** : `https://votre-domaine.com/*` (sauf `/api`)
-- **Backend** : `https://votre-domaine.com/api/*`
-- **Certificats** : Let's Encrypt automatique
+### **Routing Traefik - Sous-domaines Séparés**
+- **Frontend** : `https://planning.avs-autonomie.fr`
+- **Backend API** : `https://api.avs-autonomie.fr`
+- **Certificats** : Let's Encrypt automatique pour chaque sous-domaine
 
 ### **Sécurité HTTPS**
 - ✅ Headers de sécurité automatiques
-- ✅ CORS configuré pour votre domaine
+- ✅ CORS configuré : `planning.avs-autonomie.fr` → `api.avs-autonomie.fr`
 - ✅ MongoDB non exposé publiquement
 - ✅ SSL/TLS via Let's Encrypt
 
@@ -147,22 +168,35 @@ docker-compose logs -f planning-api
 - ✅ Restart policies configurées
 - ✅ Networks isolés (internal/traefik)
 
-## 🌍 **URLs Finales**
-- **Application** : `https://votre-domaine.com`
-- **API** : `https://votre-domaine.com/api/health`
-- **Upload CSV** : `https://votre-domaine.com/api/upload-csv`
+## 🌍 **URLs Finales AVS Autonomie**
+- **Application** : `https://planning.avs-autonomie.fr`
+- **API Health** : `https://api.avs-autonomie.fr/api/health`
+- **Upload CSV** : `https://api.avs-autonomie.fr/api/upload-csv`
+- **Export CSV** : `https://api.avs-autonomie.fr/api/export-csv`
+- **Export PDF** : `https://api.avs-autonomie.fr/api/export-pdf`
 
 ## 🔍 **Vérification Post-Déploiement**
 ```bash
 # Tester l'API
-curl https://votre-domaine.com/api/health
+curl https://api.avs-autonomie.fr/api/health
 
 # Vérifier les certificats
-curl -I https://votre-domaine.com
+curl -I https://planning.avs-autonomie.fr
+curl -I https://api.avs-autonomie.fr
 
 # Logs des services
 docker-compose logs planning-api
 docker-compose logs planning-frontend
+
+# Vérifier OSRM local (si installé)
+curl http://localhost:5000/health
 ```
 
-**Remplacez `votre-domaine.com` par votre vrai domaine dans tous les fichiers !** 🎯
+## 🎯 **Avantages Architecture Sous-domaines**
+- ✅ **Séparation claire** : Frontend et API isolés
+- ✅ **CORS propre** : Configuration précise des origines
+- ✅ **Scaling indépendant** : Possibilité de scaler séparément
+- ✅ **Certificats dédiés** : SSL optimal pour chaque service
+- ✅ **Monitoring distinct** : Logs et métriques séparés
+
+**Configuration prête pour AVS Autonomie avec performance OSRM locale !** 🚀
