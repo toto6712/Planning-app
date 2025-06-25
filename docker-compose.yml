@@ -1,0 +1,59 @@
+version: "3.7"
+
+services:
+  # === PLANNING AVS AUTONOMIE ===
+  planning-backend:
+    build: ./backend
+    container_name: planning-backend
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./backend:/app
+      - planning-cache:/app/data
+    networks:
+      - avs-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.planning-api.rule=Host(`api.avs-autonomie.fr`)"
+      - "traefik.http.routers.planning-api.entrypoints=websecure"
+      - "traefik.http.routers.planning-api.tls=true"
+      - "traefik.http.routers.planning-api.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.planning-api.loadbalancer.server.port=8001"
+      - "traefik.http.middlewares.planning-cors.headers.accessControlAllowOriginList=https://planning.avs-autonomie.fr"
+      - "traefik.http.middlewares.planning-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,OPTIONS"
+      - "traefik.http.middlewares.planning-cors.headers.accessControlAllowHeaders=*"
+      - "traefik.http.routers.planning-api.middlewares=planning-cors"
+
+  planning-frontend:
+    build: ./frontend
+    container_name: planning-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_BACKEND_URL=https://api.avs-autonomie.fr
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - planning-backend
+    networks:
+      - avs-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.planning-web.rule=Host(`planning.avs-autonomie.fr`)"
+      - "traefik.http.routers.planning-web.entrypoints=websecure"
+      - "traefik.http.routers.planning-web.tls=true"
+      - "traefik.http.routers.planning-web.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.planning-web.loadbalancer.server.port=3000"
+
+volumes:
+  planning-cache:
+    driver: local
+
+networks:
+  avs-network:
+    external: true
