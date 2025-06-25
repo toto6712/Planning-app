@@ -1,0 +1,71 @@
+# ===================================
+# LIGNES À AJOUTER dans votre docker-compose.yml existant
+# VERSION SIMPLIFIÉE - SANS MONGODB
+# ===================================
+
+services:
+  # Vos services existants...
+  
+  # === PLANNING AVS AUTONOMIE - VERSION LÉGÈRE ===
+  planning-api:
+    build:
+      context: ./planning-app/backend
+    container_name: planning-api
+    restart: unless-stopped
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./planning-app/backend:/app
+      - planning-cache:/app/data  # Cache des trajets persistant
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.planning-api.rule=Host(`api.avs-autonomie.fr`)"
+      - "traefik.http.routers.planning-api.entrypoints=websecure"
+      - "traefik.http.routers.planning-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.planning-api.loadbalancer.server.port=8001"
+      - "traefik.http.middlewares.planning-api-cors.headers.accessControlAllowOriginList=https://planning.avs-autonomie.fr"
+      - "traefik.http.middlewares.planning-api-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,OPTIONS"
+      - "traefik.http.middlewares.planning-api-cors.headers.accessControlAllowHeaders=*"
+      - "traefik.http.middlewares.planning-api-cors.headers.accessControlMaxAge=86400"
+      - "traefik.http.routers.planning-api.middlewares=planning-api-cors"
+
+  planning-frontend:
+    build:
+      context: ./planning-app/frontend
+    container_name: planning-frontend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_BACKEND_URL=https://api.avs-autonomie.fr
+    volumes:
+      - ./planning-app/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - planning-api
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.planning-frontend.rule=Host(`planning.avs-autonomie.fr`)"
+      - "traefik.http.routers.planning-frontend.entrypoints=websecure"
+      - "traefik.http.routers.planning-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.planning-frontend.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.planning-security.headers.frameDeny=true"
+      - "traefik.http.middlewares.planning-security.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.planning-security.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.planning-security.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.planning-security.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.planning-security.headers.stsPreload=true"
+      - "traefik.http.middlewares.planning-security.headers.stsIncludeSubdomains=true"
+      - "traefik.http.routers.planning-frontend.middlewares=planning-security"
+
+# ===================================
+# VOLUMES À AJOUTER (à la fin, dans la section volumes)
+# ===================================
+volumes:
+  # Vos volumes existants...
+  planning-cache:
+    driver: local  # Pour le cache des temps de trajet uniquement
