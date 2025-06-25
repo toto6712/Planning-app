@@ -1,4 +1,4 @@
-# Dockerfile Frontend React
+# Dockerfile Frontend React - AVS Autonomie
 FROM node:18-alpine
 
 WORKDIR /app
@@ -10,8 +10,8 @@ RUN npm install
 # Code application
 COPY . .
 
-# Variables d'environnement build
-ARG REACT_APP_BACKEND_URL
+# Variables d'environnement build pour AVS
+ARG REACT_APP_BACKEND_URL=https://api.avs-autonomie.fr
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
 
 # Port d'exposition
