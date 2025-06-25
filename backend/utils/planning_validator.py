@@ -1,7 +1,7 @@
 from typing import List, Dict, Set
 from datetime import datetime, timedelta
 import logging
-from ..models import PlanningEvent
+from models import PlanningEvent
 
 logger = logging.getLogger(__name__)
 
