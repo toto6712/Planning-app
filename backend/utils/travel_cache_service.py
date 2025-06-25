@@ -217,6 +217,8 @@ class TravelCacheService:
     
     async def calculate_and_cache_missing_routes(self, coordinates: Set[Tuple[float, float]]) -> int:
         """Calcule et cache automatiquement les trajets manquants via OSRM local (parallèle)"""
+        import time
+        
         try:
             from .osrm_service import osrm_service
             
@@ -224,10 +226,12 @@ class TravelCacheService:
             all_available, missing_routes = self.check_all_routes_available(coordinates)
             
             if all_available:
-                logger.info("✅ Aucun trajet manquant, pas de calcul nécessaire")
+                logger.info("✅ Aucun trajet manquant, cache complet")
                 return 0
             
-            logger.info(f"🚀 Calcul automatique PARALLÈLE de {len(missing_routes)} trajets manquants via OSRM LOCAL")
+            logger.info(f"🚀 === CALCUL OSRM LOCAL PARALLÈLE ===")
+            logger.info(f"📊 Trajets à calculer: {len(missing_routes)}")
+            logger.info(f"🔧 Mode: Calculs parallèles (20 simultanés)")
             
             # Grouper les coordonnées manquantes
             missing_coords = set()
@@ -235,14 +239,22 @@ class TravelCacheService:
                 missing_coords.add(coord1)
                 missing_coords.add(coord2)
             
-            # Calculer en parallèle tous les trajets pour ces coordonnées
             missing_coords_list = list(missing_coords)
+            logger.info(f"📍 Coordonnées concernées: {len(missing_coords_list)}")
+            
             if missing_coords_list:
+                # Calculer en parallèle tous les trajets pour ces coordonnées
+                logger.info("⚡ Lancement des calculs OSRM parallèles...")
+                calc_start = time.time()
                 travel_times_matrix = await osrm_service.calculate_multiple_routes_parallel(missing_coords_list)
+                calc_duration = time.time() - calc_start
                 
                 # Mettre à jour le cache avec les résultats
+                logger.info("💾 Mise à jour du cache...")
+                save_start = time.time()
                 calculated_count = 0
-                for (coord1, coord2) in missing_routes:
+                
+                for i, (coord1, coord2) in enumerate(missing_routes, 1):
                     lat1, lon1 = coord1
                     lat2, lon2 = coord2
                     coord1_key = f"{lat1},{lon1}"
@@ -252,17 +264,32 @@ class TravelCacheService:
                         travel_time = travel_times_matrix[coord1_key][coord2_key]
                         self.add_travel_time(lat1, lon1, lat2, lon2, travel_time)
                         calculated_count += 1
+                        
+                        # Log progression sauvegarde
+                        if calculated_count % 50 == 0:
+                            progress = (calculated_count / len(missing_routes)) * 100
+                            logger.info(f"   💾 Sauvegarde: {calculated_count}/{len(missing_routes)} ({progress:.1f}%)")
                 
                 # Sauvegarder le cache
                 self.save_cache()
+                save_duration = time.time() - save_start
+                total_duration = calc_duration + save_duration
                 
-                logger.info(f"✅ {calculated_count} nouveaux trajets calculés et mis en cache (PARALLÈLE)")
+                logger.info(f"✅ === CALCUL TERMINÉ ===")
+                logger.info(f"📊 Performance détaillée:")
+                logger.info(f"   • Calculs OSRM: {calc_duration:.2f}s")
+                logger.info(f"   • Sauvegarde: {save_duration:.2f}s")
+                logger.info(f"   • TOTAL: {total_duration:.2f}s")
+                logger.info(f"   • Vitesse: {calculated_count/total_duration:.1f} trajets/seconde")
+                logger.info(f"   • Trajets calculés: {calculated_count}")
+                logger.info(f"   • Cache mis à jour: {len(self.cache_df)} trajets total")
+                
                 return calculated_count
             else:
                 return 0
             
         except Exception as e:
-            logger.error(f"Erreur lors du calcul automatique parallèle: {str(e)}")
+            logger.error(f"❌ Erreur lors du calcul automatique parallèle: {str(e)}")
             return 0
 
 # Instance globale du service de cache
