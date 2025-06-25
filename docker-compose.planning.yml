@@ -1,5 +1,5 @@
 # ===================================
-# SERVICES PLANNING TOURNÉES
+# SERVICES PLANNING TOURNÉES AVS AUTONOMIE
 # À ajouter dans votre docker-compose.yml existant
 # ===================================
 
@@ -27,14 +27,14 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
       
-      # API Routes
-      - "traefik.http.routers.planning-api.rule=Host(`votre-domaine.com`) && PathPrefix(`/api`)"
+      # API sur api.avs-autonomie.fr
+      - "traefik.http.routers.planning-api.rule=Host(`api.avs-autonomie.fr`)"
       - "traefik.http.routers.planning-api.entrypoints=websecure"
       - "traefik.http.routers.planning-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.planning-api.loadbalancer.server.port=8001"
       
-      # CORS Headers pour API
-      - "traefik.http.middlewares.planning-api-cors.headers.accessControlAllowOriginList=https://votre-domaine.com"
+      # CORS Headers pour API (permet frontend planning.avs-autonomie.fr)
+      - "traefik.http.middlewares.planning-api-cors.headers.accessControlAllowOriginList=https://planning.avs-autonomie.fr"
       - "traefik.http.middlewares.planning-api-cors.headers.accessControlAllowMethods=GET,POST,PUT,DELETE,OPTIONS"
       - "traefik.http.middlewares.planning-api-cors.headers.accessControlAllowHeaders=*"
       - "traefik.http.middlewares.planning-api-cors.headers.accessControlMaxAge=86400"
@@ -48,7 +48,7 @@ services:
     container_name: planning-frontend
     restart: unless-stopped
     environment:
-      - REACT_APP_BACKEND_URL=https://votre-domaine.com
+      - REACT_APP_BACKEND_URL=https://api.avs-autonomie.fr
     volumes:
       - ./planning-app/frontend:/app
       - /app/node_modules
@@ -60,13 +60,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
       
-      # Frontend Routes (toutes sauf /api)
-      - "traefik.http.routers.planning-frontend.rule=Host(`votre-domaine.com`) && !PathPrefix(`/api`)"
+      # Frontend sur planning.avs-autonomie.fr
+      - "traefik.http.routers.planning-frontend.rule=Host(`planning.avs-autonomie.fr`)"
       - "traefik.http.routers.planning-frontend.entrypoints=websecure"
       - "traefik.http.routers.planning-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.planning-frontend.loadbalancer.server.port=3000"
       
-      # Security Headers
+      # Security Headers pour le frontend
       - "traefik.http.middlewares.planning-security.headers.frameDeny=true"
       - "traefik.http.middlewares.planning-security.headers.browserXssFilter=true"
       - "traefik.http.middlewares.planning-security.headers.contentTypeNosniff=true"
