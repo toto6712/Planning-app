@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Brain, Loader2, Zap, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Brain, Loader2, Zap, CheckCircle, AlertCircle, Activity, Database, Clock, BarChart3 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
@@ -14,9 +14,79 @@ const PlanningGenerator = ({ interventionsFile, intervenantsFile, onPlanningGene
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
+  const [detailedStep, setDetailedStep] = useState('');
+  const [stepStats, setStepStats] = useState(null);
   const [generationStatus, setGenerationStatus] = useState(null);
+  const [startTime, setStartTime] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const intervalRef = useRef(null);
 
   const canGenerate = interventionsFile && intervenantsFile;
+
+  // Timer pour l'elapsed time
+  useEffect(() => {
+    if (processing && startTime) {
+      intervalRef.current = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [processing, startTime]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getStepIcon = (step) => {
+    if (step.includes('PARSING')) return <Database className="h-4 w-4" />;
+    if (step.includes('VALIDATION')) return <CheckCircle className="h-4 w-4" />;
+    if (step.includes('OSRM') || step.includes('trajet')) return <Activity className="h-4 w-4" />;
+    if (step.includes('IA') || step.includes('OpenAI')) return <Brain className="h-4 w-4" />;
+    if (step.includes('STATISTIQUES')) return <BarChart3 className="h-4 w-4" />;
+    return <Clock className="h-4 w-4" />;
+  };
+
+  const simulateProgressFromLogs = (step, substep = '') => {
+    // Simuler la progression basée sur les étapes détaillées
+    if (step.includes('ÉTAPE 1/5') || step.includes('PARSING')) {
+      setProgress(10);
+      if (substep.includes('interventions')) setProgress(15);
+      if (substep.includes('intervenants')) setProgress(20);
+    } else if (step.includes('ÉTAPE 2/5') || step.includes('VALIDATION')) {
+      setProgress(25);
+    } else if (step.includes('ÉTAPE 3/5') || step.includes('trajet') || step.includes('OSRM')) {
+      setProgress(30);
+      if (substep.includes('Phase 1/4')) setProgress(35);
+      if (substep.includes('PARALLÈLE')) setProgress(45);
+      if (substep.includes('Lot')) {
+        // Extraire le numéro de lot si possible
+        const lotMatch = substep.match(/Lot (\d+)\/(\d+)/);
+        if (lotMatch) {
+          const current = parseInt(lotMatch[1]);
+          const total = parseInt(lotMatch[2]);
+          const lotProgress = 45 + (current / total) * 15; // 45-60%
+          setProgress(Math.min(60, lotProgress));
+        }
+      }
+      if (substep.includes('Phase 2/4')) setProgress(62);
+      if (substep.includes('Phase 3/4')) setProgress(65);
+      if (substep.includes('Phase 4/4')) setProgress(75);
+    } else if (step.includes('ÉTAPE 4/5') || step.includes('STATISTIQUES')) {
+      setProgress(80);
+    } else if (step.includes('ÉTAPE 5/5') || step.includes('FINALISATION')) {
+      setProgress(90);
+    }
+  };
 
   const handleGeneratePlanning = async () => {
     if (!canGenerate) {
@@ -30,38 +100,87 @@ const PlanningGenerator = ({ interventionsFile, intervenantsFile, onPlanningGene
     setProcessing(true);
     setProgress(0);
     setGenerationStatus(null);
+    setStartTime(Date.now());
+    setElapsedTime(0);
+    setStepStats(null);
 
     try {
-      // Étape 1: Validation des fichiers
-      setCurrentStep('Validation des fichiers CSV...');
-      setProgress(20);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Étape 2: Upload et parsing
-      setCurrentStep('Upload et analyse des données...');
-      setProgress(40);
+      // Phase initiale
+      setCurrentStep('📊 ÉTAPE 1/5 - PARSING CSV');
+      setDetailedStep('Préparation des données...');
+      setProgress(5);
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const formData = new FormData();
       formData.append('interventions_file', interventionsFile);
       formData.append('intervenants_file', intervenantsFile);
 
-      // Étape 3: Traitement IA
-      setCurrentStep('IA en cours d\'optimisation...');
-      setProgress(60);
+      // Simulation des étapes détaillées pendant l'appel API
+      const progressSteps = [
+        { step: '📊 ÉTAPE 1/5 - PARSING CSV', detail: '📄 Lecture des fichiers...', progress: 10, delay: 800 },
+        { step: '📊 ÉTAPE 1/5 - PARSING CSV', detail: '🔄 Parsing interventions.csv...', progress: 15, delay: 1200 },
+        { step: '📊 ÉTAPE 1/5 - PARSING CSV', detail: '🔄 Parsing intervenants.csv...', progress: 20, delay: 800 },
+        { step: '📊 ÉTAPE 2/5 - VALIDATION', detail: '✅ Validation des coordonnées GPS...', progress: 25, delay: 600 },
+        { step: '📊 ÉTAPE 3/5 - GÉNÉRATION PLANNING IA', detail: '📍 Phase 1/4 - Collecte des coordonnées...', progress: 30, delay: 1000 },
+        { step: '📊 ÉTAPE 3/5 - GÉNÉRATION PLANNING IA', detail: '🚀 OSRM LOCAL PARALLÈLE - Calculs ultra-rapides...', progress: 40, delay: 2000 },
+        { step: '📊 ÉTAPE 3/5 - GÉNÉRATION PLANNING IA', detail: '⚡ Calculs parallèles en cours (20 simultanés)...', progress: 50, delay: 1500 },
+        { step: '📊 ÉTAPE 3/5 - GÉNÉRATION PLANNING IA', detail: '🔧 Phase 2/4 - Préparation des données IA...', progress: 62, delay: 800 },
+        { step: '📊 ÉTAPE 3/5 - GÉNÉRATION PLANNING IA', detail: '🤖 Phase 3/4 - Appel OpenAI GPT-4o-mini...', progress: 65, delay: 3000 },
+        { step: '📊 ÉTAPE 3/5 - GÉNÉRATION PLANNING IA', detail: '🔍 Phase 4/4 - Traitement de la réponse IA...', progress: 75, delay: 1000 },
+        { step: '📊 ÉTAPE 4/5 - CALCUL STATISTIQUES', detail: '📈 Calcul des métriques de performance...', progress: 80, delay: 500 },
+        { step: '📊 ÉTAPE 5/5 - FINALISATION', detail: '🎉 Finalisation du planning...', progress: 90, delay: 800 }
+      ];
 
-      const response = await axios.post(`${API}/upload-csv`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 300000, // 5 minutes timeout pour calculs trajets complets
-      });
+      // Lancer les étapes de simulation en parallèle avec l'appel API
+      const simulateProgress = async () => {
+        for (const { step, detail, progress, delay } of progressSteps) {
+          setCurrentStep(step);
+          setDetailedStep(detail);
+          setProgress(progress);
+          
+          // Ajouter des statistiques simulées pour certaines étapes
+          if (detail.includes('OSRM')) {
+            setStepStats({
+              trajets: '~420 trajets théoriques',
+              vitesse: '40+ trajets/seconde',
+              mode: 'Parallèle (20 simultanés)'
+            });
+          } else if (detail.includes('OpenAI')) {
+            setStepStats({
+              modele: 'GPT-4o-mini',
+              taille: '~3,500 caractères',
+              temperature: '0.05 (optimisé)'
+            });
+          } else {
+            setStepStats(null);
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      };
 
-      // Étape 4: Finalisation
-      setCurrentStep('Finalisation du planning...');
-      setProgress(80);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Lancer simulation et appel API en parallèle
+      const [_, response] = await Promise.all([
+        simulateProgress(),
+        axios.post(`${API}/upload-csv`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 300000, // 5 minutes timeout
+        })
+      ]);
 
       const result = response.data;
+
+      // Finalisation
+      setProgress(100);
+      setCurrentStep('✅ SUCCÈS COMPLET');
+      setDetailedStep('Planning généré avec succès !');
+      setStepStats({
+        temps_total: `${elapsedTime}s`,
+        interventions: result.stats.interventions_planifiees,
+        taux: `${result.stats.taux_planification}%`
+      });
 
       // Convertir les données backend au format frontend
       const frontendPlanning = result.planning.map(event => ({
@@ -81,9 +200,6 @@ const PlanningGenerator = ({ interventionsFile, intervenantsFile, onPlanningGene
           raison: event.raison
         }
       }));
-
-      setProgress(100);
-      setCurrentStep('Planning généré avec succès !');
 
       setGenerationStatus({
         type: 'success',
@@ -113,14 +229,18 @@ const PlanningGenerator = ({ interventionsFile, intervenantsFile, onPlanningGene
         message: errorMessage
       });
       setProgress(0);
-      setCurrentStep('');
+      setCurrentStep('❌ ERREUR');
+      setDetailedStep('');
+      setStepStats(null);
     } finally {
       setProcessing(false);
       if (!generationStatus || generationStatus.type !== 'success') {
         setTimeout(() => {
           setProgress(0);
           setCurrentStep('');
-        }, 3000);
+          setDetailedStep('');
+          setStepStats(null);
+        }, 5000);
       }
     }
   };
