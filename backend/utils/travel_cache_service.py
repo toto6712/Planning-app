@@ -216,7 +216,7 @@ class TravelCacheService:
             logger.error(f"Erreur lors du vidage du cache: {str(e)}")
     
     async def calculate_and_cache_missing_routes(self, coordinates: Set[Tuple[float, float]]) -> int:
-        """Calcule et cache automatiquement les trajets manquants via OSRM"""
+        """Calcule et cache automatiquement les trajets manquants via OSRM local (parallèle)"""
         try:
             from .osrm_service import osrm_service
             
@@ -227,32 +227,42 @@ class TravelCacheService:
                 logger.info("✅ Aucun trajet manquant, pas de calcul nécessaire")
                 return 0
             
-            logger.info(f"🚀 Calcul automatique de {len(missing_routes)} trajets manquants via OSRM")
+            logger.info(f"🚀 Calcul automatique PARALLÈLE de {len(missing_routes)} trajets manquants via OSRM LOCAL")
             
-            calculated_count = 0
+            # Grouper les coordonnées manquantes
+            missing_coords = set()
             for (coord1, coord2) in missing_routes:
-                lat1, lon1 = coord1
-                lat2, lon2 = coord2
-                
-                # Calculer le temps de trajet via OSRM
-                travel_time = await osrm_service.calculate_travel_time(lat1, lon1, lat2, lon2)
-                
-                # Ajouter au cache
-                self.add_travel_time(lat1, lon1, lat2, lon2, travel_time)
-                calculated_count += 1
-                
-                # Log de progression
-                if calculated_count % 10 == 0:
-                    logger.info(f"📊 Progression cache: {calculated_count}/{len(missing_routes)}")
+                missing_coords.add(coord1)
+                missing_coords.add(coord2)
             
-            # Sauvegarder le cache
-            self.save_cache()
-            
-            logger.info(f"✅ {calculated_count} nouveaux trajets calculés et mis en cache")
-            return calculated_count
+            # Calculer en parallèle tous les trajets pour ces coordonnées
+            missing_coords_list = list(missing_coords)
+            if missing_coords_list:
+                travel_times_matrix = await osrm_service.calculate_multiple_routes_parallel(missing_coords_list)
+                
+                # Mettre à jour le cache avec les résultats
+                calculated_count = 0
+                for (coord1, coord2) in missing_routes:
+                    lat1, lon1 = coord1
+                    lat2, lon2 = coord2
+                    coord1_key = f"{lat1},{lon1}"
+                    coord2_key = f"{lat2},{lon2}"
+                    
+                    if coord1_key in travel_times_matrix and coord2_key in travel_times_matrix[coord1_key]:
+                        travel_time = travel_times_matrix[coord1_key][coord2_key]
+                        self.add_travel_time(lat1, lon1, lat2, lon2, travel_time)
+                        calculated_count += 1
+                
+                # Sauvegarder le cache
+                self.save_cache()
+                
+                logger.info(f"✅ {calculated_count} nouveaux trajets calculés et mis en cache (PARALLÈLE)")
+                return calculated_count
+            else:
+                return 0
             
         except Exception as e:
-            logger.error(f"Erreur lors du calcul automatique: {str(e)}")
+            logger.error(f"Erreur lors du calcul automatique parallèle: {str(e)}")
             return 0
 
 # Instance globale du service de cache
