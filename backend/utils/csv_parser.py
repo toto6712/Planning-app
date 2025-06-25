@@ -537,7 +537,11 @@ def parse_intervenants_csv(file_content: bytes) -> List[Intervenant]:
         if not intervenants:
             raise ValueError("Aucun intervenant valide trouvé dans le fichier")
         
-        logger.info(f"Parsed {len(intervenants)} intervenants valides")
+        logger.info(f"✅ PARSING INTERVENANTS TERMINÉ")
+        logger.info(f"   • Lignes traitées: {len(df)}")
+        logger.info(f"   • Intervenants valides: {len(intervenants)}")
+        logger.info(f"   • Doublons détectés: {len(df) - len(intervenants) - (len(df) - sum(1 for _, row in df.iterrows() if not pd.isna(row[column_mapping['Nom_Prenom']])))} ")
+        logger.info(f"   • Taux de succès: {len(intervenants)/len(df)*100:.1f}%")
         return intervenants
         
     except Exception as e:
