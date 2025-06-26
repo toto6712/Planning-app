@@ -24,45 +24,96 @@ class OpenAIClient:
             
         self.client = openai.OpenAI(api_key=api_key)
         
-        # Prompt système pour l'IA de planification
+        # Prompt système pour l'IA de planification avec votre nouveau prompt
         self.system_prompt = """Tu es un expert en planification de tournées d'intervenants à domicile.
 
-MISSION: Créer un planning optimisé à partir des interventions et intervenants fournis.
+MISSION: Planifier les tournées d'intervenants à domicile de manière optimale, en respectant les contraintes horaires, les préférences des intervenants, les règles légales et les objectifs d'efficacité.
 
 DONNÉES D'ENTRÉE:
-- Liste d'interventions avec client, date, durée, coordonnées GPS, secteur
+- Liste d'interventions avec client, date, durée, coordonnées GPS, secteur, intervenant imposé
 - Liste d'intervenants avec nom, coordonnées GPS, heures de travail, roulements
-- Matrice des temps de trajet réels calculés via OSRM (en minutes)
+- Matrice des temps de trajet réels calculés depuis travel_times_cache.csv (en minutes)
 
-CONTRAINTES STRICTES:
-1. Respect des horaires de travail (07h-22h par défaut)
-2. Gestion des pauses obligatoires (12h-14h si >6h de travail)
-3. Respect des heures hebdomadaires/mensuelles
-4. Optimisation des trajets (utiliser les temps réels fournis)
-5. Gestion des week-ends alternés
-6. Respect des spécialités et contraintes horaires
+CRITÈRES PRINCIPAUX POUR LA PLANIFICATION:
 
-RÈGLES DE PLANIFICATION:
-- Éviter les conflits d'horaires
-- Minimiser les temps de trajet
-- Équilibrer la charge entre intervenants
-- Respecter les préférences de roulement
-- Marquer "non_planifiable" si impossible à programmer
+1. RESPECT DU JOUR ET DE L'HEURE DE DÉBUT:
+   - Priorité 10/10: Le jour de l'intervention est impérativement respecté
+   - L'heure de début peut être modulée de 5 à 10 minutes après l'heure prévue
+
+2. ATTRIBUER L'INTERVENANT IMPOSÉ:
+   - Priorité 10/10: Si un intervenant est spécifié dans l'intervention, il DOIT être affecté sans exception
+
+3. CHOISIR L'INTERVENTION LA PLUS PROCHE:
+   - Utiliser EXCLUSIVEMENT les temps de trajet fournis dans la matrice
+   - Attribuer l'intervention la plus proche en termes de temps de trajet
+   - Exception: Optimiser entre localités si nécessaire
+
+PROCESSUS DE PLANIFICATION:
+1. Commencer par les interventions prévues à 7h (matin) ou 14h (après-midi)
+2. Réduire les conflits d'horaires en déplaçant les interventions quand possible
+3. Organiser les tournées dans les plages 7h-14h et 14h-22h
+
+CRITÈRES D'OPTIMISATION (PAR ORDRE DE PRIORITÉ):
+
+PRIORITÉ 10/10 - INTERVENANT IMPOSÉ:
+- Si un intervenant est imposé, il est affecté à l'intervention correspondante
+
+PRIORITÉ 9/10 - ÉVITER LES CONFLITS D'HORAIRES:
+- Aucun intervenant ne peut être à deux endroits simultanément
+- Si conflit détecté, marquer l'intervention comme non planifiable
+
+PRIORITÉ 8/10 - ÉQUILIBRER LA CHARGE:
+- Répartir la charge de travail équitablement entre intervenants
+- Aucun intervenant surchargé ou sous-utilisé
+
+PRIORITÉ 8/10 - MOBILISER LE MOINS D'INTERVENANTS:
+- Utiliser le minimum d'intervenants nécessaires
+- Maximiser leurs heures de travail sans dépasser 13h/jour
+
+PRIORITÉ 7/10 - HEURES HEBDOMADAIRES/MENSUELLES:
+- Respecter les limites des fichiers intervenants
+
+PRIORITÉ 7/10 - CONTRAINTES LÉGALES:
+- Maximum 13h par jour
+- Repos minimum 11h entre chaque prise de poste
+- Maximum 6 jours consécutifs glissants
+- 1 jour de repos par semaine obligatoire
+
+OPTIMISATION DES TRAJETS:
+1. Première intervention: Assigner à l'intervenant le plus proche de son domicile
+2. Interventions suivantes: Toujours choisir l'intervention la plus proche (temps minimal) depuis position actuelle
+3. Enchaîner pour minimiser les déplacements totaux
 
 RETOUR ATTENDU:
 Format JSON strict avec array d'objets contenant:
 - client: nom du client
 - intervenant: nom de l'intervenant assigné
-- start: heure de début (format "HH:MM")
-- end: heure de fin (format "HH:MM") 
-- color: couleur assignée à l'intervenant
+- start: heure de début au format ISO complet "YYYY-MM-DDTHH:MM:SS"
+- end: heure de fin au format ISO complet "YYYY-MM-DDTHH:MM:SS"
+- color: couleur hexadécimale assignée à l'intervenant
 - non_planifiable: boolean (true si impossible à programmer)
-- trajet_precedent: temps de trajet depuis intervention précédente
-- latitude: coordonnées GPS intervention
-- longitude: coordonnées GPS intervention
-- raison: explication si non_planifiable
+- trajet_precedent: temps de trajet depuis intervention précédente au format "X min"
+- latitude: coordonnées GPS intervention (float)
+- longitude: coordonnées GPS intervention (float)
+- raison: explication détaillée si non_planifiable
 
-IMPORTANT: Utiliser EXACTEMENT les temps de trajet fournis dans la matrice, pas d'estimation."""
+RÈGLES CRITIQUES:
+- Utiliser EXACTEMENT les temps de trajet fournis dans la matrice
+- Respecter les priorités dans l'ordre indiqué
+- Si impossible à planifier après tous les critères, marquer non_planifiable avec raison
+- Retourner EXACTEMENT le même nombre d'interventions qu'en entrée"""
+
+    def _format_trajet_precedent(self, value) -> str:
+        """Convertit le temps de trajet au bon format string"""
+        if isinstance(value, int):
+            return f"{value} min"
+        elif isinstance(value, str):
+            # Si c'est déjà une string, vérifier qu'elle a l'unité
+            if value.isdigit():
+                return f"{value} min"
+            return value
+        else:
+            return "0 min"
 
     async def get_travel_times_with_cache(self, interventions: List[Intervention], intervenants: List[Intervenant]) -> Dict[str, Dict[str, int]]:
         """Récupère les temps de trajet avec calcul automatique des manquants"""
@@ -162,7 +213,7 @@ IMPORTANT: Utiliser EXACTEMENT les temps de trajet fournis dans la matrice, pas 
                     "longitude": intervention.longitude,
                     "secteur": intervention.secteur
                 }
-                # N'ajouter l'intervenant que s'il est spécifié
+                # N'ajouter l'intervenant que s'il est spécifié (PRIORITÉ 10/10)
                 if intervention.intervenant:
                     data["intervenant_impose"] = intervention.intervenant
                 # Ajouter les champs spéciaux
@@ -198,17 +249,18 @@ IMPORTANT: Utiliser EXACTEMENT les temps de trajet fournis dans la matrice, pas 
 INTERVENANTS ({len(intervenants_data)} total):
 {json.dumps(intervenants_data, ensure_ascii=False)}
 
-TEMPS DE TRAJET CALCULÉS (OSRM LOCAL - en minutes) - Format: "latitude,longitude" -> temps:
+TEMPS DE TRAJET CALCULÉS (travel_times_cache.csv - en minutes) - Format: "latitude,longitude" -> temps:
 {json.dumps(travel_times, ensure_ascii=False)}
 
-RÈGLES CRITIQUES:
-- UTILISER les temps de trajet réels fournis ci-dessus (format latitude,longitude)
-- AUCUN intervenant ne peut être à 2 endroits en même temps
-- VÉRIFIER les horaires avant assignation
+RÈGLES CRITIQUES D'EXÉCUTION:
+- UTILISER EXCLUSIVEMENT les temps de trajet réels fournis ci-dessus (format latitude,longitude)
+- RESPECTER l'ordre de priorité: Intervenant imposé (10/10) > Conflits (9/10) > Équilibrage (8/10) > Légal (7/10)
+- APPLIQUER l'algorithme d'optimisation: 1ère intervention = plus proche du domicile, suivantes = plus proche de position actuelle
+- FORMAT DE SORTIE: dates ISO complètes "YYYY-MM-DDTHH:MM:SS"
 - Temps entre interventions = temps de trajet réel + 5 min minimum
-- Si conflit: chercher autre intervenant ou marquer non_planifiable
+- Si conflit ou impossible: marquer non_planifiable avec raison détaillée
 
-RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
+OBJECTIF: RETOURNER {len(interventions_data)} interventions planifiées SANS DOUBLONS ni CONFLITS."""
             
             prep_duration = time.time() - prep_start
             logger.info(f"✅ Phase 2/4 terminée en {prep_duration:.2f}s")
@@ -230,7 +282,7 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                     {"role": "user", "content": user_message}
                 ],
                 temperature=0.05,  # Très faible pour cohérence maximale
-                max_tokens=4000
+                max_tokens=12000
             )
             ai_duration = time.time() - ai_start
             
@@ -322,7 +374,7 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                         end=event_data.get('end', ''),
                         color=assigned_color,
                         non_planifiable=event_data.get('non_planifiable', False),
-                        trajet_precedent=event_data.get('trajet_precedent', '0 min'),
+                        trajet_precedent=self._format_trajet_precedent(event_data.get('trajet_precedent', '0 min')),
                         latitude=event_data.get('latitude', 0.0),
                         longitude=event_data.get('longitude', 0.0),
                         raison=event_data.get('raison', None)
@@ -389,7 +441,7 @@ RETOURNER {len(interventions_data)} interventions SANS DOUBLONS ni CONFLITS."""
                     # Convertir au format ISO
                     date_part, time_part = start_time.split(" ")
                     day, month, year = date_part.split("/")
-                    start_iso = f"{year}-{month}-{day}T{time_part}"
+                    start_iso = f"{year}-{month}-{day}T{time_part}:00"
                     
                     # Calculer l'heure de fin
                     from datetime import datetime, timedelta
