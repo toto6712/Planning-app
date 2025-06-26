@@ -1,24 +1,18 @@
-FROM node:18-alpine
+# Étape 1 : Build de l'application
+FROM node:18-alpine as builder
 
 WORKDIR /app
-
-# Dépendances
 COPY package*.json ./
-RUN npm install
-
-# Code application
+RUN npm install --force
 COPY . .
+RUN npm run build
 
-# Variables d'environnement build pour AVS
-ARG REACT_APP_BACKEND_URL=https://api.avs-autonomie.fr
-ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
+# Étape 2 : Serveur statique avec serve
+FROM node:18-alpine
+WORKDIR /app
+RUN npm install -g serve
 
-# Port d'exposition
-EXPOSE 3000
+COPY --from=builder /app/build ./build
 
-# Santé check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:3000 || exit 1
-
-# Commande de démarrage
-CMD ["npm", "start"]
+EXPOSE 80
+CMD ["serve", "-s", "build", "-l", "80"]
