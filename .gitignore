@@ -1,0 +1,47 @@
+# Fichiers sensibles
+.env
+backend/.env
+
+# Cache Python
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+
+# Node/Frontend
+node_modules/
+dist/
+build/
+
+# Environnements virtuels
+venv/
+env/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store# Fichiers sensibles
+.env
+backend/.env
+
+# Cache Python
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+
+# Node/Frontend
+node_modules/
+dist/
+build/
+
+# Environnements virtuels
+venv/
+env/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
